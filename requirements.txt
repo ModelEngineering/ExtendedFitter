@@ -1,0 +1,7 @@
+coverage
+jupyterlab
+lmfit
+nose
+numpy
+pandas
+pylint
