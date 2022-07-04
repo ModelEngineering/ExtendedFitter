@@ -7,8 +7,8 @@ Created on Tue Feb 9, 2021
 TODO: make sure changes are propagated from ALL to others
 """
 
-from analyzeSBML import Parameter, ParameterManager
-import analyzeSBML.constants as cn
+import ExtendedFitter as ext
+import ExtendedFitter.constants as cn
 
 import matplotlib
 import numpy as np
@@ -27,12 +27,12 @@ PARAMETER_NAMES = ["A", "B", "C"]
 LOWERS = [10, 20, 30]
 UPPERS = [100, 200, 300]
 VALUES = [15, 25, 35]
-PARAMETERS = [Parameter(n, lower=l, upper=u, value=v)
+PARAMETERS = [ext.Parameter(n, lower=l, upper=u, value=v)
       for n, l, u, v in zip(PARAMETER_NAMES, LOWERS, UPPERS, VALUES)]
-PARAMETERS = [Parameter.mkParameter(p) for p in PARAMETERS]
+PARAMETERS = [ext.Parameter.mkParameter(p) for p in PARAMETERS]
 PARAMETERS_COLLECTION = [[PARAMETERS[0]], [PARAMETERS[0], PARAMETERS[2]],
       [PARAMETERS[1]]]
-PARAMETERS_COLLECTION = [Parameter.toLMfit(c)
+PARAMETERS_COLLECTION = [ext.Parameter.toLMfit(c)
       for c in PARAMETERS_COLLECTION]
 
 
@@ -44,7 +44,7 @@ def mkRepeatedList(list, repeat):
 class TestParameter(unittest.TestCase):
 
     def setUp(self):
-        self.parameter = Parameter(NAME, lower=LOWER,
+        self.parameter = ext.Parameter(NAME, lower=LOWER,
               upper=UPPER, value=VALUE)
 
     def testConstructor(self):
@@ -59,7 +59,7 @@ class TestParameter(unittest.TestCase):
         if IGNORE_TEST:
             return
         def test(newValue, expected):
-            parameter = Parameter(NAME, LOWER, UPPER, VALUE)
+            parameter = ext.Parameter(NAME, LOWER, UPPER, VALUE)
             parameter.updateLower(newValue)
             self.assertEqual(parameter.lower, expected)
         #
@@ -70,7 +70,7 @@ class TestParameter(unittest.TestCase):
         if IGNORE_TEST:
             return
         def test(newValue, expected):
-            parameter = Parameter(NAME, lower=LOWER, upper=UPPER, value=VALUE)
+            parameter = ext.Parameter(NAME, lower=LOWER, upper=UPPER, value=VALUE)
             parameter.updateUpper(newValue)
             self.assertEqual(parameter.upper, expected)
         #
@@ -81,8 +81,8 @@ class TestParameter(unittest.TestCase):
         if IGNORE_TEST:
             return
         def test(parameterNames):
-            parameters = [Parameter(n) for n in parameterNames]
-            lmfitParameters = Parameter.toLMfit(parameters)
+            parameters = [ext.Parameter(n) for n in parameterNames]
+            lmfitParameters = ext.Parameter.toLMfit(parameters)
             self.assertEqual(len(lmfitParameters.valuesdict()),
                   len(parameterNames))
         #
@@ -94,7 +94,7 @@ class TestParameterManager(unittest.TestCase):
 
     def setUp(self):
         self.numModel = 3
-        self.manager = ParameterManager(MODEL_NAMES[:self.numModel],
+        self.manager = ext.ParameterManager(MODEL_NAMES[:self.numModel],
               PARAMETERS_COLLECTION[:self.numModel])
 
     def testConstructor(self):
@@ -115,19 +115,19 @@ class TestParameterManager(unittest.TestCase):
         if IGNORE_TEST:
             return
         MULT = 10
-        parameters = [Parameter(n, lower=l, upper=u, value=v*MULT)
+        parameters = [ext.Parameter(n, lower=l, upper=u, value=v*MULT)
               for n, l, u, v in zip(PARAMETER_NAMES, LOWERS, UPPERS, VALUES)]
         parametersCollection = [[parameters[0]], [parameters[0], parameters[2]],
               [parameters[1]]]
-        parametersCollection = [Parameter.toLMfit(c)
+        parametersCollection = [ext.Parameter.toLMfit(c)
               for c in parametersCollection]
-        for oldParameters, newParameters in zip(PARAMETERS_COLLECTION,
+        for old_parameters, new_parameters in zip(PARAMETERS_COLLECTION,
               parametersCollection):
-            self.manager.updateValues(newParameters)
-            oldValuesDct = oldParameters.valuesdict()
-            newValuesDct = newParameters.valuesdict()
-            trues = [oldValuesDct[k]*MULT == newValuesDct[k]
-                  for k in newValuesDct.keys()]
+            self.manager.updateValues(new_parameters)
+            oldValuesDct = old_parameters.valuesdict()
+            new_values_dct = new_parameters.valuesdict()
+            trues = [oldValuesDct[k]*MULT == new_values_dct[k]
+                  for k in new_values_dct.keys()]
             self.assertTrue(all(trues))
         
 

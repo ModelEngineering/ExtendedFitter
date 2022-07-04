@@ -15,7 +15,7 @@ Perofrmance logging is provided as well. Usage is:
     ... more code ...
     print(logger.performanceDF)  # performance data
 """
-from SBstoat import _helpers
+from ExtendedFitter import util
 
 import pandas as pd
 import time
@@ -80,7 +80,7 @@ class Statistic():
         return result
 
     def copy(self):
-        return _helpers.copyObject(self)
+        return util.copyObject(self)
 
     def update(self, value):
         self.count += 1
@@ -124,7 +124,7 @@ class Logger():
         self.statisticDct = {}
 
     def copy(self):
-        return _helpers.copyObject(self)
+        return util.copyObject(self)
 
     def equals(self, other):
         true = True
@@ -323,4 +323,4 @@ class Logger():
         ----------
         other: Logger
         """
-        _ = _helpers.copyObject(other, self)
+        _ = util.copyObject(other, self)

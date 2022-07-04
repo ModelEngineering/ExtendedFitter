@@ -1,6 +1,7 @@
 coverage
 jupyterlab
 lmfit
+matplotlib
 nose
 numpy
 pandas

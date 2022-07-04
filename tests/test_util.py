@@ -4,7 +4,7 @@ Created on Nov 11, 2020
 @author: joseph-hellerstein
 """
 
-from SBstoat import _helpers
+from ExtendedFitter import util
 
 import copy
 import numpy as np
@@ -21,12 +21,12 @@ class TestFunctions(unittest.TestCase):
     def testCalcRelError(self):
         if IGNORE_TEST:
             return
-        result = _helpers.calcRelError(1.5, 1)
+        result = util.calcRelError(1.5, 1)
         self.assertEqual(result, 1.0/3)
-        result = _helpers.calcRelError(1.5, 1, isAbsolute=False)
+        result = util.calcRelError(1.5, 1, isAbsolute=False)
         self.assertEqual(result, -1.0/3)
         #
-        result = _helpers.calcRelError(0, 1)
+        result = util.calcRelError(0, 1)
         self.assertTrue(np.isnan(result))
 
     def testFilterOutliersFromZero(self):
@@ -35,7 +35,7 @@ class TestFunctions(unittest.TestCase):
         MAX_SL = 0.1
         SIZE = 1000
         def test(data, baseData):
-            newData = _helpers.filterOutliersFromZero(data, MAX_SL)
+            newData = util.filterOutliersFromZero(data, MAX_SL)
             diff = set(baseData).symmetric_difference(newData)
             self.assertEqual(len(diff), 0)
         #
@@ -69,7 +69,7 @@ class TestFunctions(unittest.TestCase):
                 return new
         #
         def test(obj):
-            newObj = _helpers.copyObject(obj)
+            newObj = util.copyObject(obj)
             for item in ["a", "b"]:
                 true = obj.__getattribute__(item) ==newObj.__getattribute__(item)
                 if isinstance(true, np.ndarray):
@@ -83,7 +83,7 @@ class TestFunctions(unittest.TestCase):
     def testPpDct(self):
         SIZE = 10
         dct = {n: str(n) for n in range(SIZE)}
-        result = _helpers.ppDict(dct)
+        result = util.ppDict(dct)
         self.assertEqual(result.count("\n"), SIZE-1)
 
 

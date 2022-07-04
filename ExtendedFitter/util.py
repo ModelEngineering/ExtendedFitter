@@ -4,7 +4,7 @@ from ExtendedFitter import constants as cn
 import copy
 import inspect
 import numpy as np
-import scipy
+import scipy.stats as stats
 
 
 def calcRelError(actual:float, estimated:float, isAbsolute:bool=True):
@@ -64,7 +64,7 @@ def filterOutliersFromZero(data, maxSL):
             fstat = var1/var2
         else:
             fstat = 1000*var1
-        sl = 1 - scipy.stats.f.cdf(fstat, df1, df2)
+        sl = 1 - stats.f.cdf(fstat, df1, df2)
         return sl
     sortedData = sorted(data, key=lambda v: np.abs(v), reverse=True)
     sortedData = np.array(sortedData)

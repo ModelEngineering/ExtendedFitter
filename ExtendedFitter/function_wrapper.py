@@ -13,8 +13,8 @@ import numpy as np
 import time
 
 
-class _FunctionWrapper():
-    """Wraps a function used for optimization."""
+class FunctionWrapper:
+    # Wraps a function used for fitting.
 
     def __init__(self, function, isCollect=False):
         """
@@ -25,7 +25,7 @@ class _FunctionWrapper():
                argument
                    lmfit.Parameter
                    isRawData - boolean to indicate return total SSQ
-               returns: np.array
+               returns: np.array (residuals)
         isCollect: bool
             collect performance statistics on function execution
         """
@@ -38,16 +38,29 @@ class _FunctionWrapper():
         self.bestParamDct = None
 
     @staticmethod
-    def _calcSSQ(arr):
+    def calcSSQ(arr):
         return sum(arr**2)
 
     def execute(self, params, **kwargs):
+        """
+        Runs the function using its keyword arguments. 
+        Accumulates statistics.
+
+        Parameters
+        ----------
+        params: lmfit.Parameters
+        kwargs: dict
+        
+        Returns
+        -------
+        array-float
+        """
         if self._isCollect:
             startTime = time.time()
         result = self._function(params, **kwargs)
         if self._isCollect:
             duration = time.time() - startTime
-        rssq = _FunctionWrapper._calcSSQ(result)
+        rssq = FunctionWrapper.calcSSQ(result)
         if rssq < self.rssq:
             self.rssq = rssq
             self.bestParamDct = dict(params.valuesdict())

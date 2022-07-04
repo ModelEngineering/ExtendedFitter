@@ -5,10 +5,10 @@ Created on Tue Feb 9, 2021
 @author: joseph-hellerstein
 """
 
-import SBstoat._constants as cn
-from SBstoat._optimizer import Optimizer
-from SBstoat import _helpers
-from SBstoat.logs import Logger, LEVEL_MAX
+import ExtendedFitter.constants as cn
+from ExtendedFitter.extended_fitter import ExtendedFitter
+from ExtendedFitter import util
+from ExtendedFitter.logs import Logger, LEVEL_MAX
 
 import collections
 import matplotlib
@@ -36,7 +36,7 @@ BEST_VALUES = list(BEST_DCT.values())
 def parabola(params:lmfit.Parameters, minArgs:float=BEST_VALUES,
       isRawData=False):
     """
-    Implements a function used for optimization with Optimizer.
+    Implements a function used for optimization with ExtendedFitter.
 
     Parameters
     ----------
@@ -67,15 +67,15 @@ def parabolaWithoutRaw(params:lmfit.Parameters, minArgs:float=BEST_VALUES):
         
 
 ################ TEST CLASSES #############
-class TestOptimizer(unittest.TestCase):
+class TestExtendedFitter(unittest.TestCase):
 
     def setUp(self):
         self.function = parabola
         self.params = lmfit.Parameters()
         self.params.add(XKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
         self.params.add(YKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
-        self.methods = Optimizer.mkOptimizerMethod()
-        self.optimizer = Optimizer(self.function, self.params, self.methods,
+        self.methods = ExtendedFitter.mkExtendedFitterMethod()
+        self.optimizer = ExtendedFitter(self.function, self.params, self.methods,
               isCollect=False)
 
     def testConstructor(self):
@@ -83,7 +83,7 @@ class TestOptimizer(unittest.TestCase):
             return
         self.assertEqual( len(self.optimizer.performanceStats), 0)
 
-    def testMkOptimizerMethod(self):
+    def testMkExtendedFitterMethod(self):
         if IGNORE_TEST:
             return
         def test(results):
@@ -92,10 +92,10 @@ class TestOptimizer(unittest.TestCase):
                 self.assertTrue(isinstance(result.kwargs, dict))
                 self.assertTrue(cn.MAX_NFEV in result.kwargs.keys())
         #
-        test(Optimizer.mkOptimizerMethod())
-        test(Optimizer.mkOptimizerMethod(methodNames="aa"))
-        test(Optimizer.mkOptimizerMethod(methodNames=["aa", "bb"]))
-        test(Optimizer.mkOptimizerMethod(methodNames=["aa", "bb"],
+        test(ExtendedFitter.mkExtendedFitterMethod())
+        test(ExtendedFitter.mkExtendedFitterMethod(methodNames="aa"))
+        test(ExtendedFitter.mkExtendedFitterMethod(methodNames=["aa", "bb"]))
+        test(ExtendedFitter.mkExtendedFitterMethod(methodNames=["aa", "bb"],
               methodKwargs={cn.MAX_NFEV: 10}))
 
     def checkResult(self, optimizer=None):
@@ -114,10 +114,10 @@ class TestOptimizer(unittest.TestCase):
     def testOptimize2(self):
         if IGNORE_TEST:
             return
-        methods = Optimizer.mkOptimizerMethod(
+        methods = ExtendedFitter.mkExtendedFitterMethod(
               methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
         for function in [parabola, parabolaWithoutRaw]:
-            optimizer = Optimizer(self.function, self.params, methods,
+            optimizer = ExtendedFitter(self.function, self.params, methods,
                   isCollect=True)
             optimizer.execute()
             self.checkResult()
@@ -127,9 +127,9 @@ class TestOptimizer(unittest.TestCase):
     def testPlotPerformance(self):
         if IGNORE_TEST:
             return
-        methods = Optimizer.mkOptimizerMethod(
+        methods = ExtendedFitter.mkExtendedFitterMethod(
               methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        optimizer = Optimizer(self.function, self.params, methods,
+        optimizer = ExtendedFitter(self.function, self.params, methods,
               isCollect=True)
         optimizer.execute()
         optimizer.plotPerformance(isPlot=IS_PLOT)
@@ -137,10 +137,10 @@ class TestOptimizer(unittest.TestCase):
     def testPlotQuality(self):
         if IGNORE_TEST:
             return
-        methods = Optimizer.mkOptimizerMethod(
+        methods = ExtendedFitter.mkExtendedFitterMethod(
               methodNames=[cn.METHOD_DIFFERENTIAL_EVOLUTION, cn.METHOD_LEASTSQ])
               #methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        optimizer = Optimizer(self.function, self.params, methods,
+        optimizer = ExtendedFitter(self.function, self.params, methods,
               isCollect=True)
         optimizer.execute()
         optimizer.plotQuality(isPlot=IS_PLOT)
@@ -159,20 +159,20 @@ class TestOptimizer(unittest.TestCase):
             for name, value in valueDct1.items():
                 self.assertFalse(np.isclose(value, valueDct2[name]))
         #
-        newParams = Optimizer._setRandomValue(self.params)
+        newParams = ExtendedFitter._setRandomValue(self.params)
         test1(newParams)
         #
-        newerParams = Optimizer._setRandomValue(self.params)
+        newerParams = ExtendedFitter._setRandomValue(self.params)
         test1(newerParams)
         test2(newerParams, newParams)
 
     def testOptimize(self):
         if IGNORE_TEST:
             return
-        methods = Optimizer.mkOptimizerMethod(maxFev=10)
-        optimizer0 = Optimizer.optimize(self.function, self.params, methods,
+        methods = ExtendedFitter.mkExtendedFitterMethod(maxFev=10)
+        optimizer0 = ExtendedFitter.optimize(self.function, self.params, methods,
               isCollect=False, numRestart=0)
-        optimizer100 = Optimizer.optimize(self.function, self.params, methods,
+        optimizer100 = ExtendedFitter.optimize(self.function, self.params, methods,
               isCollect=False, numRestart=100)
         #
         valuesDct0 = optimizer0.params.valuesdict()
