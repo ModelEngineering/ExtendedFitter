@@ -1,7 +1,6 @@
 """Abstraction for a function that has parameters to fit."""
 
 
-from ExtendedFitter.logs import Logger
 from ExtendedFitter import util
 from ExtendedFitter import constants as cn
 
