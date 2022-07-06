@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb 9, 2021
+Created on July 4, 2022
 
 @author: joseph-hellerstein
 """
@@ -8,7 +8,7 @@ Created on Tue Feb 9, 2021
 import ExtendedFitter.constants as cn
 from ExtendedFitter.extended_fitter import ExtendedFitter
 from ExtendedFitter import util
-from ExtendedFitter.logs import Logger, LEVEL_MAX
+from ExtendedFitter.logs import Logger
 
 import collections
 import matplotlib
@@ -29,12 +29,11 @@ YKEY = "y"
 INITIAL_VALUE = 1
 MIN_VALUE = -4
 MAX_VALUE = 10
-BEST_DCT = {XKEY: 4, YKEY:8}
-BEST_VALUES = list(BEST_DCT.values())
+POINT_DCT = {XKEY: 4, YKEY:8}
+POINT_VALUES = list(POINT_DCT.values())
 
 ########## FUNCTIONS #################
-def parabola(params:lmfit.Parameters, minArgs:float=BEST_VALUES,
-      isRawData=False):
+def calcPointResiduals(params:lmfit.Parameters, minArgs:float=POINT_VALUES):
     """
     Implements a function used for optimization with ExtendedFitter.
 
@@ -42,8 +41,6 @@ def parabola(params:lmfit.Parameters, minArgs:float=BEST_VALUES,
     ----------
     params: lmfit.Parameters
     minArgs: tupe-float
-    isRawData: bool
-        Return raw data as baseline
     
     Returns
     -------
@@ -52,36 +49,38 @@ def parabola(params:lmfit.Parameters, minArgs:float=BEST_VALUES,
 
     Usage
     -----
-    residuals = parabola(params)
+    residuals = calcPointResiduals(params)
     """
-    if isRawData:
-        return np.array([MAX_VALUE, MAX_VALUE])
     xValue = params.valuesdict()[XKEY]
     yValue = params.valuesdict()[YKEY]
-    residuals = np.array([(xValue-BEST_VALUES[0])**4, (yValue-BEST_VALUES[1])**4])
+    residuals = np.array([(xValue-POINT_VALUES[0]), (yValue-POINT_VALUES[1])])
     return np.array(residuals)
 
 
-def parabolaWithoutRaw(params:lmfit.Parameters, minArgs:float=BEST_VALUES):
-    return parabola(params, minArgs=minArgs)
+def calcPointResidualsWithoutRaw(params:lmfit.Parameters, minArgs:float=POINT_VALUES):
+    return calcPointResiduals(params, minArgs=minArgs)
         
 
 ################ TEST CLASSES #############
 class TestExtendedFitter(unittest.TestCase):
 
     def setUp(self):
-        self.function = parabola
+        self.function = calcPointResiduals
         self.params = lmfit.Parameters()
         self.params.add(XKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
         self.params.add(YKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
         self.methods = ExtendedFitter.mkExtendedFitterMethod()
-        self.optimizer = ExtendedFitter(self.function, self.params, self.methods,
-              isCollect=False)
+        self.fitter = ExtendedFitter(self.function, self.params, self.methods)
 
     def testConstructor(self):
         if IGNORE_TEST:
             return
-        self.assertEqual( len(self.optimizer.performanceStats), 0)
+        self.assertIsNone(self.fitter.duration)
+
+    def testExecute(self):
+        if IGNORE_TEST:
+            return
+        self.checkResult(fitter=self.fitter)
 
     def testMkExtendedFitterMethod(self):
         if IGNORE_TEST:
@@ -98,41 +97,23 @@ class TestExtendedFitter(unittest.TestCase):
         test(ExtendedFitter.mkExtendedFitterMethod(methodNames=["aa", "bb"],
               methodKwargs={cn.MAX_NFEV: 10}))
 
-    def checkResult(self, optimizer=None):
-        if optimizer is None:
-            optimizer = self.optimizer
-        optimizer.execute()
-        values = optimizer.params.valuesdict().values()
-        for expected, actual in zip(BEST_VALUES, values):
+    def checkResult(self, fitter=None):
+        if fitter is None:
+            fitter = self.fitter
+        fitter.execute()
+        values = fitter.final_params.valuesdict().values()
+        for expected, actual in zip(POINT_VALUES, values):
             self.assertLess(np.abs(expected-actual), 0.01)
-
-    def testOptimize1(self):
-        if IGNORE_TEST:
-            return
-        self.checkResult()
-
-    def testOptimize2(self):
-        if IGNORE_TEST:
-            return
-        methods = ExtendedFitter.mkExtendedFitterMethod(
-              methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        for function in [parabola, parabolaWithoutRaw]:
-            optimizer = ExtendedFitter(self.function, self.params, methods,
-                  isCollect=True)
-            optimizer.execute()
-            self.checkResult()
-            for idx in range(len(optimizer.performanceStats)):
-                self.assertGreater(len(optimizer.performanceStats[idx]), 100)
 
     def testPlotPerformance(self):
         if IGNORE_TEST:
             return
         methods = ExtendedFitter.mkExtendedFitterMethod(
               methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        optimizer = ExtendedFitter(self.function, self.params, methods,
-              isCollect=True)
-        optimizer.execute()
-        optimizer.plotPerformance(isPlot=IS_PLOT)
+        fitter = ExtendedFitter(self.function, self.params, methods,
+              is_collect=True)
+        fitter.execute()
+        fitter.plotPerformance(isPlot=IS_PLOT)
 
     def testPlotQuality(self):
         if IGNORE_TEST:
@@ -140,47 +121,19 @@ class TestExtendedFitter(unittest.TestCase):
         methods = ExtendedFitter.mkExtendedFitterMethod(
               methodNames=[cn.METHOD_DIFFERENTIAL_EVOLUTION, cn.METHOD_LEASTSQ])
               #methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        optimizer = ExtendedFitter(self.function, self.params, methods,
-              isCollect=True)
-        optimizer.execute()
-        optimizer.plotQuality(isPlot=IS_PLOT)
+        fitter = ExtendedFitter(self.function, self.params, methods,
+              is_collect=True)
+        fitter.execute()
+        fitter.plotQuality(isPlot=IS_PLOT)
 
-    def testSetRandomValue(self):
+    def testReport(self):
         if IGNORE_TEST:
             return
-        def test1(params):
-            for _, parameter in params.items():
-                self.assertLessEqual(parameter.min, parameter.value)
-                self.assertLessEqual(parameter.value, parameter.max)
-        #
-        def test2(param1s, param2s):
-            valueDct1 = param1s.valuesdict()
-            valueDct2 = param2s.valuesdict()
-            for name, value in valueDct1.items():
-                self.assertFalse(np.isclose(value, valueDct2[name]))
-        #
-        newParams = ExtendedFitter._setRandomValue(self.params)
-        test1(newParams)
-        #
-        newerParams = ExtendedFitter._setRandomValue(self.params)
-        test1(newerParams)
-        test2(newerParams, newParams)
-
-    def testOptimize(self):
-        if IGNORE_TEST:
-            return
-        methods = ExtendedFitter.mkExtendedFitterMethod(maxFev=10)
-        optimizer0 = ExtendedFitter.optimize(self.function, self.params, methods,
-              isCollect=False, numRestart=0)
-        optimizer100 = ExtendedFitter.optimize(self.function, self.params, methods,
-              isCollect=False, numRestart=100)
-        #
-        valuesDct0 = optimizer0.params.valuesdict()
-        valuesDct100 = optimizer100.params.valuesdict()
-        for name, value in valuesDct100.items():
-            diff0 = (BEST_DCT[name] - valuesDct0[name])**2
-            diff100 = (BEST_DCT[name] - value)**2
-            self.assertLess(diff100, diff0)
+        self.checkResult(fitter=self.fitter)
+        report = self.fitter.report()
+        self.assertTrue(cn.METHOD_LEASTSQ in report)
+        if IS_PLOT:
+            print(report)
         
 
 if __name__ == '__main__':

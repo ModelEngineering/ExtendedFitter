@@ -15,7 +15,7 @@ import time
 class FunctionWrapper:
     # Wraps a function used for fitting.
 
-    def __init__(self, function, isCollect=False):
+    def __init__(self, function, is_collect=False):
         """
         Parameters
         ----------
@@ -25,11 +25,11 @@ class FunctionWrapper:
                    lmfit.Parameter
                    isRawData - boolean to indicate return total SSQ
                returns: np.array (residuals)
-        isCollect: bool
+        is_collect: bool
             collect performance statistics on function execution
         """
         self._function = function
-        self._isCollect = isCollect
+        self.is_collect = is_collect
         # Results
         self.perfStatistics = []  # durations of function executions
         self.rssqStatistics = []  # residual sum of squares, a quality measure
@@ -54,16 +54,16 @@ class FunctionWrapper:
         -------
         array-float
         """
-        if self._isCollect:
+        if self.is_collect:
             startTime = time.time()
         result = self._function(params, **kwargs)
-        if self._isCollect:
+        if self.is_collect:
             duration = time.time() - startTime
         rssq = FunctionWrapper.calcSSQ(result)
         if rssq < self.rssq:
             self.rssq = rssq
             self.bestParamDct = dict(params.valuesdict())
-        if self._isCollect:
-            self.perfStatistics.append(duration - startTime)
+        if self.is_collect:
+            self.perfStatistics.append(duration )
             self.rssqStatistics.append(rssq)
         return result

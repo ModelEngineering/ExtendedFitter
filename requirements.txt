@@ -2,7 +2,7 @@ coverage
 jupyterlab
 lmfit
 matplotlib
-nose
+nose2
 numpy
 pandas
 pylint

@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
 """Extended Parameter Fitting
+
+Created on July 4, 2022
 
 ExtendedFitter extends lmfit optimizations by:
 1. Ensuring that the parameters chosen have the lowest residuals sum of squares
@@ -9,7 +12,6 @@ ExtendedFitter extends lmfit optimizations by:
 TODO
 
 1. ExtendedFitter runs tests
-2. Remover Parameter, ParameterManager from analyzeSBML
 
 """
 
@@ -28,19 +30,19 @@ import time
 
 class ExtendedFitter():
     """
-    Implements an interface to optimizers with abstractions
-    for multiple methods and performance reporting.
+    Implements an interface to parameter fitting methods that provides
+    additional capabilities and bug fixes.
     The class also handles an oddity with lmfit that the final parameters
     returned may not be the best.
 
     Usage
     -----
-    optimizer = ExtendedFitter(calcResiduals, params, [cn.METHOD_LEASTSQ])
-    optimizer.execute()
+    fitter = ExtendedFitter(calcResiduals, params, [cn.METHOD_LEASTSQ])
+    fitter.execute()
     """
 
-    def __init__(self, function, initialParams, methods, logger=None,
-          isCollect=False):
+    def __init__(self, function, initial_params, methods, logger=None,
+          is_collect=False):
         """
         Parameters
         ----------
@@ -50,98 +52,60 @@ class ExtendedFitter():
             isInitialze (bool). True on first call the
             isGetBest (bool). True to retrieve best parameters
            returns residuals (if bool arguments are false)
-        initialParams: lmfit.parameters
+        initial_params: lmfit.parameters
         methods: list-util.ExtendedFitterMethod
-        isCollect: bool
-           Collects performance statistcs
         """
-        self._function = function
-        self._methods = methods
-        self._initialParams = initialParams
-        self._isCollect = isCollect
+        self.function = function
+        self.methods = methods
+        self._initial_params = initial_params
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
+        self.is_collect = is_collect
+        # Statistics
+        self.performance_stats = []  # durations of function executions
+        self.quality_stats = []  # residual sum of squares, a quality measure
         # Outputs
-        self.performanceStats = []  # list of performance results
-        self.qualityStats = []  # relative rssq
-        self.params = None
-        self.minimizerResult = None
+        self.duration = None  # Duration of parameter search
+        self.final_params = None
+        self.minimizer_result = None
         self.rssq = None
-
-    def copyResults(self):
-        """
-        Copies of the results of the optimization.
-
-        Returns
-        -------
-        ExtendedFitter
-        """
-        newExtendedFitter = ExtendedFitter(self._function, self._initialParams.copy(),
-              self._methods, logger=self.logger, isCollect=self._isCollect)
-        newExtendedFitter._function = None  # Not serializable
-        #
-        newExtendedFitter.performanceStats = copy.deepcopy(self.performanceStats)
-        newExtendedFitter.qualityStats = copy.deepcopy(self.qualityStats)
-        newExtendedFitter.minimizerResult = copy.deepcopy(self.minimizerResult)
-        newExtendedFitter.params = None
-        if self.params is not None:
-            newExtendedFitter.params = self.params.copy()
-        newExtendedFitter.rssq = self.rssq
-        return newExtendedFitter
-
-    @staticmethod
-    def _setRandomValue(params):
-        """
-        Sets value to a uniformly distributed random number between min and max.
-
-        Parameters
-        ----------
-        params: lmfit.Parameters
-        
-        Returns
-        -------
-        lmfit.Parameters
-        """
-        newParameters = lmfit.Parameters()
-        for name, parameter in params.items():
-            newValue = np.random.uniform(parameter.min, parameter.max)
-            newParameters.add(name, min=parameter.min, max=parameter.max,
-                  value=newValue)
-        return newParameters
        
     def execute(self):
         """
-        Performs the optimization on the function.
-        Result is self.params
+        Performs parameter fitting function.
+        Result is self.final_params
         """
-        lastExcp = None
-        self.params = self._initialParams.copy()
+        start_time = time.time()
+        last_excp = None
+        self.final_params = self._initial_params.copy()
         minimizer = None
-        for optimizerMethod in self._methods:
-            method = optimizerMethod.method
-            kwargs = optimizerMethod.kwargs
-            wrapperFunction = _FunctionWrapper(self._function,
-                  isCollect=self._isCollect)
-            minimizer = lmfit.Minimizer(wrapperFunction.execute, self.params)
+        for fitter_method in self.methods:
+            method = fitter_method.method
+            kwargs = fitter_method.kwargs
+            wrapper_function = FunctionWrapper(self.function,
+                  is_collect=self.is_collect)
+            minimizer = lmfit.Minimizer(wrapper_function.execute, self.final_params)
             try:
-                self.minimizerResult = minimizer.minimize(method=method, **kwargs)
+                self.minimizer_result = minimizer.minimize(method=method, **kwargs)
             except Exception as excp:
-                lastExcp = excp
+                last_excp = excp
                 msg = "Error minimizing for method: %s" % method
                 self.logger.error(msg, excp)
                 continue
             # Update the parameters
-            if wrapperFunction.bestParamDct is not None:
-                util.updateParameterValues(self.params,
-                      wrapperFunction.bestParamDct)
+            if wrapper_function.bestParamDct is not None:
+                util.updateParameterValues(self.final_params,
+                      wrapper_function.bestParamDct)
             # Update other statistics
-            self.rssq = wrapperFunction.rssq
-            self.performanceStats.append(list(wrapperFunction.perfStatistics))
-            self.qualityStats.append(list(wrapperFunction.rssqStatistics))
+            self.rssq = wrapper_function.rssq
+            self.performance_stats.append(list(wrapper_function.perfStatistics))
+            self.quality_stats.append(list(wrapper_function.rssqStatistics))
         if minimizer is None:
             msg = "*** Optimization failed."
-            self.logger.error(msg, lastExcp)
+            self.logger.error(msg, last_excp)
+        else:
+            self.duration = time.time() - start_time
 
     def report(self):
         """
@@ -153,11 +117,11 @@ class ExtendedFitter():
         """
         VARIABLE_STG = "[[Variables]]"
         CORRELATION_STG = "[[Correlations]]"
-        if self.minimizerResult is None:
-            raise ValueError("Must do fitModel before reportFit.")
-        valuesDct = self.params.valuesdict()
-        valuesStg = util.ppDict(dict(valuesDct), indent=4)
-        reportSplit = str(lmfit.fit_report(self.minimizerResult)).split("\n")
+        if self.minimizer_result is None:
+            raise ValueError("Must do execute before doing report.")
+        value_dct = self.final_params.valuesdict()
+        values_stg = util.ppDict(dict(value_dct), indent=4)
+        reportSplit = str(lmfit.fit_report(self.minimizer_result)).split("\n")
         # Eliminate Variables section
         inVariableSection = False
         trimmedReportSplit = []
@@ -171,71 +135,9 @@ class ExtendedFitter():
             trimmedReportSplit.append(line)
         # Construct the report
         newReportSplit = [VARIABLE_STG]
-        newReportSplit.extend(valuesStg.split("\n"))
+        newReportSplit.extend(values_stg.split("\n"))
         newReportSplit.extend(trimmedReportSplit)
         return "\n".join(newReportSplit)
-
-    def plotPerformance(self, isPlot=True):
-        """
-        Plots the statistics for running the objective function.
-        """
-        if not self._isCollect:
-            msg = "Must construct with isCollect = True "
-            msg += "to get performance plot."
-            raise ValueError(msg)
-        # Compute statistics
-        TOT = "Tot"
-        CNT = "Cnt"
-        AVG = "Avg"
-        IDX = "Idx"
-        totalTimes = [sum(v) for v in self.performanceStats]
-        counts = [len(v) for v in self.performanceStats]
-        averages = [np.mean(v) for v in self.performanceStats]
-        df = pd.DataFrame({
-            IDX: range(len(self.performanceStats)),
-            TOT: totalTimes,
-            CNT: counts,
-            AVG: averages,
-            })
-        #
-        _, axes = plt.subplots(1, 3)
-        df.plot.bar(x=IDX, y=TOT, ax=axes[0], title="Total time",
-              xlabel="method")
-        df.plot.bar(x=IDX, y=AVG, ax=axes[1], title="Average time",
-              xlabel="method")
-        df.plot.bar(x=IDX, y=CNT, ax=axes[2], title="Number calls",
-              xlabel="method")
-        if isPlot:
-            plt.show()
-
-    def plotQuality(self, isPlot=True):
-        """
-        Plots the quality results
-        """
-        if not self._isCollect:
-            msg = "Must construct with isCollect = True "
-            msg += "to get quality plots."
-            raise ValueError(msg)
-        ITERATION = "iteration"
-        _, axes = plt.subplots(len(self._methods))
-        minLength = min([len(v) for v in self.qualityStats])
-        # Compute statistics
-        dct = {self._methods[i].method: self.qualityStats[i][:minLength]
-            for i in range(len(self._methods))}
-        df = pd.DataFrame(dct)
-        df[ITERATION] = range(minLength)
-        #
-        for idx, method in enumerate(self._methods):
-            if "AxesSubplot" in str(type(axes)):
-                ax = axes
-            else:
-                ax = axes[idx]
-            df.plot.line(x=ITERATION, y=method.method, ax=ax, xlabel="")
-            ax.set_ylabel("SSQ")
-            if idx == len(self._methods) - 1:
-                ax.set_xlabel(ITERATION)
-        if isPlot:
-            plt.show()
 
     @staticmethod
     def mkExtendedFitterMethod(methodNames=None, methodKwargs=None,
@@ -265,37 +167,67 @@ class ExtendedFitter():
             del newMethodKwargs[cn.MAX_NFEV]
         methodKwargs = np.repeat(newMethodKwargs, len(methodNames))
         #
-        result = [util.ExtendedFitterMethod(n, k) for n, k  \
+        results = [util.ExtendedFitterMethod(n, k) for n, k  \
               in zip(methodNames, methodKwargs)]
-        return result
+        return results
 
-    @classmethod
-    def optimize(cls, function, initialParams, methods, numRestart=0, **kwargs):
+    def plotPerformance(self, isPlot=True):
         """
-        Parameters
-        ----------
-        function: Funtion
-           Arguments
-            lmfit.parameters
-            isInitialze (bool). True on first call the
-            isGetBest (bool). True to retrieve best parameters
-           returns residuals (if bool arguments are false)
-        initialParams: lmfit.parameters
-        methods: list-util.ExtendedFitterMethod
-        numRestart: int
-            Number of restarts with randomly chosen initial values
-
-        Returns
-        -------
-        ExtendedFitter
+        Plots the statistics for running the objective function.
         """
-        bestExtendedFitter = cls(function, initialParams, methods, **kwargs)
-        bestExtendedFitter.execute()
+        if not self.is_collect:
+            msg = "Must construct with isCollect = True "
+            msg += "to get performance plot."
+            raise ValueError(msg)
+        # Compute statistics
+        TOT = "Tot"
+        CNT = "Cnt"
+        AVG = "Avg"
+        total_times = [sum(v) for v in self.performance_stats]
+        counts = [len(v) for v in self.performance_stats]
+        averages = [np.mean(v) for v in self.performance_stats]
+        df = pd.DataFrame({
+            TOT: total_times,
+            CNT: counts,
+            AVG: averages,
+            })
         #
-        for _ in range(numRestart):
-            newInitialParams = ExtendedFitter._setRandomValue(initialParams)
-            newExtendedFitter = cls(function, newInitialParams, methods, **kwargs)
-            newExtendedFitter.execute()
-            if newExtendedFitter.rssq < bestExtendedFitter.rssq:
-                bestExtendedFitter = newExtendedFitter
-        return bestExtendedFitter
+        df.index = [m.method for m in self.methods]
+        _, axes = plt.subplots(1, 3)
+        df.plot.bar(y=TOT, ax=axes[0], title="Total time",
+              xlabel="method")
+        df.plot.bar(y=AVG, ax=axes[1], title="Average time",
+              xlabel="method")
+        df.plot.bar(y=CNT, ax=axes[2], title="Number calls",
+              xlabel="method")
+        if isPlot:
+            plt.show()
+
+    def plotQuality(self, isPlot=True):
+        """
+        Plots the quality results
+        """
+        if not self.is_collect:
+            msg = "Must construct with isCollect = True "
+            msg += "to get quality plots."
+            raise ValueError(msg)
+        ITERATION = "iteration"
+        _, axes = plt.subplots(len(self.methods))
+        minLength = min([len(v) for v in self.quality_stats])
+        # Compute statistics
+        dct = {self.methods[i].method: self.quality_stats[i][:minLength]
+            for i in range(len(self.methods))}
+        df = pd.DataFrame(dct)
+        df[ITERATION] = range(minLength)
+        #
+        for idx, method in enumerate(self.methods):
+            if "AxesSubplot" in str(type(axes)):
+                ax = axes
+            else:
+                ax = axes[idx]
+            df.plot.line(x=ITERATION, y=method.method, ax=ax, xlabel="")
+            ax.set_ylabel("SSQ")
+            if idx == len(self.methods) - 1:
+                ax.set_xlabel(ITERATION)
+        if isPlot:
+            plt.show()

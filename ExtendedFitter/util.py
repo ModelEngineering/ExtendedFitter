@@ -192,8 +192,7 @@ def updateParameterValues(parameters, newValuesDct):
         parameters[parameterName].set(
               value=newValuesDct[parameterName])
 
-
-class OptimizerMethod():
+class ExtendedFitterMethod():
 
     """Container for optimization information"""
 
