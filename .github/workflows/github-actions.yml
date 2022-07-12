@@ -16,8 +16,3 @@ jobs:
     - name: Run tests
       run: |
         nose2 tests
-    - name: Run notebooks
-      run: |
-        PYTHONPATH=`pwd`
-        export PYTHONPATH
-        bash ./test_notebooks.sh
