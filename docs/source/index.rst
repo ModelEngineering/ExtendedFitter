@@ -21,6 +21,7 @@ fitterpp (pronounced "fitter plus plus") extends the capabilities of ``lmfit`` i
 
    concepts
    tutorial
+   methods
 
 
 
