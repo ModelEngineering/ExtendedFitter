@@ -1,5 +1,5 @@
 
-from ExtendedFitter import constants as cn
+from fitterpp import constants as cn
 
 import copy
 import inspect
@@ -192,7 +192,7 @@ def updateParameterValues(parameters, newValuesDct):
         parameters[parameterName].set(
               value=newValuesDct[parameterName])
 
-class ExtendedFitterMethod():
+class FitterMethod():
 
     """Container for optimization information"""
 

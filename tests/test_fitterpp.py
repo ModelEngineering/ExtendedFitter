@@ -5,10 +5,10 @@ Created on July 4, 2022
 @author: joseph-hellerstein
 """
 
-import ExtendedFitter.constants as cn
-from ExtendedFitter.extended_fitter import ExtendedFitter
-from ExtendedFitter import util
-from ExtendedFitter.logs import Logger
+import fitterpp.constants as cn
+from fitterpp.fitterpp import Fitterpp
+from fitterpp import util
+from fitterpp.logs import Logger
 
 import collections
 import matplotlib
@@ -35,7 +35,7 @@ POINT_VALUES = list(POINT_DCT.values())
 ########## FUNCTIONS #################
 def calcPointResiduals(params:lmfit.Parameters, minArgs:float=POINT_VALUES):
     """
-    Implements a function used for optimization with ExtendedFitter.
+    Implements a function used for optimization with fitterpp.
 
     Parameters
     ----------
@@ -62,15 +62,15 @@ def calcPointResidualsWithoutRaw(params:lmfit.Parameters, minArgs:float=POINT_VA
         
 
 ################ TEST CLASSES #############
-class TestExtendedFitter(unittest.TestCase):
+class TestFitterpp(unittest.TestCase):
 
     def setUp(self):
         self.function = calcPointResiduals
         self.params = lmfit.Parameters()
         self.params.add(XKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
         self.params.add(YKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
-        self.methods = ExtendedFitter.mkExtendedFitterMethod()
-        self.fitter = ExtendedFitter(self.function, self.params, self.methods)
+        self.methods = Fitterpp.mkFitterMethod()
+        self.fitter = Fitterpp(self.function, self.params, self.methods)
 
     def testConstructor(self):
         if IGNORE_TEST:
@@ -82,7 +82,7 @@ class TestExtendedFitter(unittest.TestCase):
             return
         self.checkResult(fitter=self.fitter)
 
-    def testMkExtendedFitterMethod(self):
+    def testMkFitterMethod(self):
         if IGNORE_TEST:
             return
         def test(results):
@@ -91,10 +91,10 @@ class TestExtendedFitter(unittest.TestCase):
                 self.assertTrue(isinstance(result.kwargs, dict))
                 self.assertTrue(cn.MAX_NFEV in result.kwargs.keys())
         #
-        test(ExtendedFitter.mkExtendedFitterMethod())
-        test(ExtendedFitter.mkExtendedFitterMethod(methodNames="aa"))
-        test(ExtendedFitter.mkExtendedFitterMethod(methodNames=["aa", "bb"]))
-        test(ExtendedFitter.mkExtendedFitterMethod(methodNames=["aa", "bb"],
+        test(Fitterpp.mkFitterMethod())
+        test(Fitterpp.mkFitterMethod(methodNames="aa"))
+        test(Fitterpp.mkFitterMethod(methodNames=["aa", "bb"]))
+        test(Fitterpp.mkFitterMethod(methodNames=["aa", "bb"],
               methodKwargs={cn.MAX_NFEV: 10}))
 
     def checkResult(self, fitter=None):
@@ -108,9 +108,9 @@ class TestExtendedFitter(unittest.TestCase):
     def testPlotPerformance(self):
         if IGNORE_TEST:
             return
-        methods = ExtendedFitter.mkExtendedFitterMethod(
+        methods = Fitterpp.mkFitterMethod(
               methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        fitter = ExtendedFitter(self.function, self.params, methods,
+        fitter = Fitterpp(self.function, self.params, methods,
               is_collect=True)
         fitter.execute()
         fitter.plotPerformance(isPlot=IS_PLOT)
@@ -118,10 +118,10 @@ class TestExtendedFitter(unittest.TestCase):
     def testPlotQuality(self):
         if IGNORE_TEST:
             return
-        methods = ExtendedFitter.mkExtendedFitterMethod(
+        methods = Fitterpp.mkFitterMethod(
               methodNames=[cn.METHOD_DIFFERENTIAL_EVOLUTION, cn.METHOD_LEASTSQ])
               #methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        fitter = ExtendedFitter(self.function, self.params, methods,
+        fitter = Fitterpp(self.function, self.params, methods,
               is_collect=True)
         fitter.execute()
         fitter.plotQuality(isPlot=IS_PLOT)

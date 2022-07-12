@@ -7,8 +7,8 @@ Created on Tue Feb 9, 2021
 TODO: make sure changes are propagated from ALL to others
 """
 
-import ExtendedFitter as ext
-import ExtendedFitter.constants as cn
+import fitterpp as ext
+import fitterpp.constants as cn
 
 import matplotlib
 import numpy as np

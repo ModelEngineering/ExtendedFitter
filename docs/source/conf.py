@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'ExtendedFitter'
-copyright = '2022, Joseph L. Hellerstein'
-author = 'Joseph L. Hellerstein'
+project = 'fitterpp'
+copyright = '2022, Joseph L Hellerstein'
+author = 'Joseph L Hellerstein'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'

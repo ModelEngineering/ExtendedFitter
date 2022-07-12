@@ -1,12 +1,12 @@
-.. ExtendedFitter documentation master file, created by
+.. fitterpp documentation master file, created by
    sphinx-quickstart on Sun Jul 10 20:15:14 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to ExtendedFitter's documentation!
+Welcome to fitterpp's documentation!
 ==========================================
 
-ExtendedFitter extends the capabilities of ``lmfit`` in several ways:
+fitterpp (pronounced "fitter plus plus") extends the capabilities of ``lmfit`` in several ways:
 
 1. ensures that the parameters reported have the smallest residual sum of squares;
 

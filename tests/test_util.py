@@ -4,7 +4,7 @@ Created on Nov 11, 2020
 @author: joseph-hellerstein
 """
 
-from ExtendedFitter import util
+from fitterpp import util
 
 import copy
 import numpy as np

@@ -5,8 +5,8 @@ Created on Tue Feb 9, 2021
 @author: joseph-hellerstein
 """
 
-import ExtendedFitter.constants as cn
-from ExtendedFitter.function_wrapper import FunctionWrapper
+import fitterpp.constants as cn
+from fitterpp.function_wrapper import FunctionWrapper
 
 import collections
 import numpy as np

@@ -3,7 +3,7 @@
 
 Created on July 4, 2022
 
-ExtendedFitter extends lmfit optimizations by:
+fitterpp extends lmfit optimizations by:
 1. Ensuring that the parameters chosen have the lowest residuals sum of squares
 2. Providing for a sequence of optimization methods
 3. Providing an option to repeat a method sequence with different randomly
@@ -11,14 +11,14 @@ ExtendedFitter extends lmfit optimizations by:
 
 TODO
 
-1. ExtendedFitter runs tests
+1. fitterpp runs tests
 
 """
 
-from ExtendedFitter.logs import Logger
-from ExtendedFitter import util
-from ExtendedFitter import constants as cn
-from ExtendedFitter.function_wrapper import FunctionWrapper
+from fitterpp.logs import Logger
+from fitterpp import util
+from fitterpp import constants as cn
+from fitterpp.function_wrapper import FunctionWrapper
 
 import copy
 import lmfit
@@ -28,7 +28,7 @@ import numpy as np
 import time
 
 
-class ExtendedFitter():
+class Fitterpp():
     """
     Implements an interface to parameter fitting methods that provides
     additional capabilities and bug fixes.
@@ -37,7 +37,7 @@ class ExtendedFitter():
 
     Usage
     -----
-    fitter = ExtendedFitter(calcResiduals, params, [cn.METHOD_LEASTSQ])
+    fitter = fitterpp(calcResiduals, params, [cn.METHOD_LEASTSQ])
     fitter.execute()
     """
 
@@ -53,7 +53,7 @@ class ExtendedFitter():
             isGetBest (bool). True to retrieve best parameters
            returns residuals (if bool arguments are false)
         initial_params: lmfit.parameters
-        methods: list-util.ExtendedFitterMethod
+        methods: list-util.FitterMethod
         """
         self.function = function
         self.methods = methods
@@ -140,10 +140,10 @@ class ExtendedFitter():
         return "\n".join(newReportSplit)
 
     @staticmethod
-    def mkExtendedFitterMethod(methodNames=None, methodKwargs=None,
+    def mkFitterMethod(methodNames=None, methodKwargs=None,
           maxFev=cn.MAX_NFEV_DFT):
         """
-        Constructs an ExtendedFitterMethod
+        Constructs an FitterMethod
         Parameters
         ----------
         methodNames: list-str/str
@@ -151,7 +151,7 @@ class ExtendedFitter():
 
         Returns
         -------
-        list-ExtendedFitterMethod
+        list-FitterMethod
         """
         if methodNames is None:
             methodNames = [cn.METHOD_LEASTSQ]
@@ -167,7 +167,7 @@ class ExtendedFitter():
             del newMethodKwargs[cn.MAX_NFEV]
         methodKwargs = np.repeat(newMethodKwargs, len(methodNames))
         #
-        results = [util.ExtendedFitterMethod(n, k) for n, k  \
+        results = [util.FitterMethod(n, k) for n, k  \
               in zip(methodNames, methodKwargs)]
         return results
 

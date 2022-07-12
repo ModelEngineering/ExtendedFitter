@@ -1,8 +1,8 @@
 """Abstraction for a function that has parameters to fit."""
 
 
-from ExtendedFitter import util
-from ExtendedFitter import constants as cn
+from fitterpp import util
+from fitterpp import constants as cn
 
 import copy
 import lmfit

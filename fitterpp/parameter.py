@@ -10,7 +10,7 @@ A ParameterManager manages parameters from multiple models.
 
 """
 
-from ExtendedFitter import constants as cn
+from fitterpp import constants as cn
 
 import matplotlib.pyplot as plt
 import numpy as np
