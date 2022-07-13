@@ -41,7 +41,7 @@ class Fitterpp():
     fitter.execute()
     """
 
-    def __init__(self, function, initial_params, methods, logger=None,
+    def __init__(self, function, initial_params, methods=None, logger=None,
           is_collect=False):
         """
         Parameters
@@ -57,6 +57,8 @@ class Fitterpp():
         """
         self.function = function
         self.methods = methods
+        if self.methods is None:
+            self.methods = self.mkFitterMethod()
         self._initial_params = initial_params
         self.logger = logger
         if self.logger is None:
@@ -86,13 +88,7 @@ class Fitterpp():
             wrapper_function = FunctionWrapper(self.function,
                   is_collect=self.is_collect)
             minimizer = lmfit.Minimizer(wrapper_function.execute, self.final_params)
-            try:
-                self.minimizer_result = minimizer.minimize(method=method, **kwargs)
-            except Exception as excp:
-                last_excp = excp
-                msg = "Error minimizing for method: %s" % method
-                self.logger.error(msg, excp)
-                continue
+            self.minimizer_result = minimizer.minimize(method=method, **kwargs)
             # Update the parameters
             if wrapper_function.bestParamDct is not None:
                 util.updateParameterValues(self.final_params,

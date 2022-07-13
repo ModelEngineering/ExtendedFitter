@@ -67,10 +67,13 @@ class TestFitterpp(unittest.TestCase):
     def setUp(self):
         self.function = calcPointResiduals
         self.params = lmfit.Parameters()
-        self.params.add(XKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
-        self.params.add(YKEY, value=INITIAL_VALUE, min=MIN_VALUE, max=MAX_VALUE)
+        self.params.add(XKEY, value=INITIAL_VALUE,
+              min=MIN_VALUE, max=MAX_VALUE)
+        self.params.add(YKEY, value=INITIAL_VALUE,
+              min=MIN_VALUE, max=MAX_VALUE)
         self.methods = Fitterpp.mkFitterMethod()
-        self.fitter = Fitterpp(self.function, self.params, self.methods)
+        self.fitter = Fitterpp(self.function, self.params,
+              methods=self.methods)
 
     def testConstructor(self):
         if IGNORE_TEST:
