@@ -8,11 +8,13 @@ Welcome to fitterpp's documentation!
 
 fitterpp (pronounced "fitter plus plus") extends the capabilities of ``lmfit`` in several ways:
 
-1. ensures that the parameters reported have the smallest residual sum of squares;
+1. simplifies the parameter fitting process;
 
-2. provides for running several optimizers in sequence;
+2. ensures that the parameters reported have the smallest residual sum of squares;
 
-3. reports statistics on the runtime and quality improvmenets (reductions in residual sum of squares).
+3. provides for running several optimizers in sequence;
+
+4. reports statistics on the runtime and quality improvmenets (reductions in residual sum of squares).
 
 
 .. toctree::

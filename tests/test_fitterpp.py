@@ -13,6 +13,7 @@ from fitterpp.logs import Logger
 import collections
 import matplotlib
 import numpy as np
+import pandas as pd
 import lmfit
 import unittest
 
@@ -29,50 +30,45 @@ YKEY = "y"
 INITIAL_VALUE = 1
 MIN_VALUE = -4
 MAX_VALUE = 10
-POINT_DCT = {XKEY: 4, YKEY:8}
-POINT_VALUES = list(POINT_DCT.values())
+PARABOLA_PRMS = {"mult": 2, "center": 10}
+SIZE = 20
+XVALUES = range(SIZE)
+DATA_DF = pd.DataFrame({
+      YKEY: np.array([PARABOLA_PRMS["mult"]*(n - PARABOLA_PRMS["center"])**2
+           + 1*np.random.rand() for n in XVALUES])
+      })
 
 ########## FUNCTIONS #################
-def calcPointResiduals(params:lmfit.Parameters, minArgs:float=POINT_VALUES):
+def calcParabola(center=0, mult=1, xvalues=XVALUES):
     """
-    Implements a function used for optimization with fitterpp.
+    Calculates a parabola of a specified size.
 
     Parameters
     ----------
-    params: lmfit.Parameters
-    minArgs: tupe-float
+    center: float (parameter to fit)
+    mult: float (parameter to fit)
+    xvalues: int (not a fitted parameter)
     
     Returns
     -------
-    np.array
-        residuals
-
-    Usage
-    -----
-    residuals = calcPointResiduals(params)
+    DataFrame
+        Columns: x, v
     """
-    xValue = params.valuesdict()[XKEY]
-    yValue = params.valuesdict()[YKEY]
-    residuals = np.array([(xValue-POINT_VALUES[0]), (yValue-POINT_VALUES[1])])
-    return np.array(residuals)
+    estimates = np.array([mult*(n - center)**2 for n in xvalues])
+    return pd.DataFrame({XKEY: XVALUES, YKEY: estimates})
 
-
-def calcPointResidualsWithoutRaw(params:lmfit.Parameters, minArgs:float=POINT_VALUES):
-    return calcPointResiduals(params, minArgs=minArgs)
-        
 
 ################ TEST CLASSES #############
 class TestFitterpp(unittest.TestCase):
 
     def setUp(self):
-        self.function = calcPointResiduals
+        self.function = calcParabola
         self.params = lmfit.Parameters()
-        self.params.add(XKEY, value=INITIAL_VALUE,
-              min=MIN_VALUE, max=MAX_VALUE)
-        self.params.add(YKEY, value=INITIAL_VALUE,
-              min=MIN_VALUE, max=MAX_VALUE)
-        self.methods = Fitterpp.mkFitterMethod()
-        self.fitter = Fitterpp(self.function, self.params,
+        for key, value in PARABOLA_PRMS.items():
+            self.params.add(key, value=0, min=0, max=10*value)
+        self.methods = Fitterpp.mkFitterMethod(
+              method_names=["differential_evolution"], max_fev=1000)
+        self.fitter = Fitterpp(self.function, self.params, DATA_DF,
               methods=self.methods)
 
     def testConstructor(self):
@@ -80,10 +76,30 @@ class TestFitterpp(unittest.TestCase):
             return
         self.assertIsNone(self.fitter.duration)
 
+    def testMkFitterFunction(self):
+        if IGNORE_TEST:
+            return
+        func = self.fitter._mkFitterFunction()
+        result = func(self.params)
+        self.assertEqual(len(result), len(DATA_DF))
+
     def testExecute(self):
         if IGNORE_TEST:
             return
-        self.checkResult(fitter=self.fitter)
+        def test(fitter):
+            for key, value in PARABOLA_PRMS.items():
+                true_value = value
+                fitted_value = fitter.final_params.valuesdict()[key]
+                self.assertLess(np.abs(true_value - fitted_value), 0.1)
+        params = lmfit.Parameters()
+        for key, value in PARABOLA_PRMS.items():
+            params.add(key, value=0, min=0, max=10*value)
+        methods = Fitterpp.mkFitterMethod(
+              method_names=["differential_evolution"],
+              max_fev=1000)
+        fitter = Fitterpp(calcParabola, params, DATA_DF, methods=methods)
+        fitter.execute()
+        test(fitter)
 
     def testMkFitterMethod(self):
         if IGNORE_TEST:
@@ -95,46 +111,40 @@ class TestFitterpp(unittest.TestCase):
                 self.assertTrue(cn.MAX_NFEV in result.kwargs.keys())
         #
         test(Fitterpp.mkFitterMethod())
-        test(Fitterpp.mkFitterMethod(methodNames="aa"))
-        test(Fitterpp.mkFitterMethod(methodNames=["aa", "bb"]))
-        test(Fitterpp.mkFitterMethod(methodNames=["aa", "bb"],
-              methodKwargs={cn.MAX_NFEV: 10}))
-
-    def checkResult(self, fitter=None):
-        if fitter is None:
-            fitter = self.fitter
-        fitter.execute()
-        values = fitter.final_params.valuesdict().values()
-        for expected, actual in zip(POINT_VALUES, values):
-            self.assertLess(np.abs(expected-actual), 0.01)
+        test(Fitterpp.mkFitterMethod(method_names="aa"))
+        test(Fitterpp.mkFitterMethod(method_names=["aa", "bb"]))
+        test(Fitterpp.mkFitterMethod(method_names=["aa", "bb"],
+              method_kwargs={cn.MAX_NFEV: 10}))
 
     def testPlotPerformance(self):
         if IGNORE_TEST:
             return
         methods = Fitterpp.mkFitterMethod(
-              methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        fitter = Fitterpp(self.function, self.params, methods,
-              is_collect=True)
+              method_names=[cn.METHOD_LEASTSQ,
+              cn.METHOD_DIFFERENTIAL_EVOLUTION])
+        fitter = Fitterpp(self.function, self.params, DATA_DF,
+              methods=methods, is_collect=True)
         fitter.execute()
-        fitter.plotPerformance(isPlot=IS_PLOT)
+        fitter.plotPerformance(is_plot=IS_PLOT)
 
     def testPlotQuality(self):
         if IGNORE_TEST:
             return
         methods = Fitterpp.mkFitterMethod(
-              methodNames=[cn.METHOD_DIFFERENTIAL_EVOLUTION, cn.METHOD_LEASTSQ])
-              #methodNames=[cn.METHOD_LEASTSQ, cn.METHOD_DIFFERENTIAL_EVOLUTION])
-        fitter = Fitterpp(self.function, self.params, methods,
+              method_names=[cn.METHOD_DIFFERENTIAL_EVOLUTION,
+                    cn.METHOD_LEASTSQ])
+        fitter = Fitterpp(self.function, self.params, DATA_DF,
+              methods=methods,
               is_collect=True)
         fitter.execute()
-        fitter.plotQuality(isPlot=IS_PLOT)
+        fitter.plotQuality(is_plot=IS_PLOT)
 
     def testReport(self):
         if IGNORE_TEST:
             return
-        self.checkResult(fitter=self.fitter)
+        self.fitter.execute()
         report = self.fitter.report()
-        self.assertTrue(cn.METHOD_LEASTSQ in report)
+        self.assertTrue(cn.METHOD_DIFFERENTIAL_EVOLUTION in report)
         if IS_PLOT:
             print(report)
         

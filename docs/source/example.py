@@ -3,48 +3,51 @@
 import fitterpp as fpp
 import lmfit
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
 CENTER = 10
 MULT = 2.0
-
 XVALUES = range(20)
-DATA = np.array([MULT*(n - CENTER)**2 + 0*np.random.rand() for n in XVALUES])
-if False:
-    plt.scatter(XVALUES, DATA)
-    plt.show()
 
-def myFunc(params):
+def calcParabola(center=0, mult=1, xvalues=XVALUES, is_noise=False):
     """
-    This is an example of an residuals calculation function.
-    The function calculates the residuals between DATA and the 
-    estimated values using the parameters provided.
+    Calculates values for a parabola, optionally with noise.
 
     Parameters
     ----------
-    params: list-float
-        params[0]: parameter provided for center
-        params[1]: parameter provided for multiplier
+    center: float (parameter to fit)
+    mult: float (parameter to fit)
+    xvalues: int (not a fitted parameter)
+    is_noise: bool (include noise)
     
     Returns
     -------
-    list-float (residuals)
+    DataFrame
+        Columns: x, v
     """
-    center = params["center"].value
-    mult = params["mult"].value
-    estimates = np.array([mult*(n - center)**2 for n in XVALUES])
-    print((center, mult))
-    print(np.log10(sum(estimates**2)))
-    import pdb; pdb.set_trace()
-    return DATA - estimates
+    estimates = np.array([mult*(n - center)**2 
+          + 10*is_noise*np.random.rand() for n in xvalues])
+    return pd.DataFrame({"x": xvalues, "y": estimates})
 
 
+DATA_DF = calcParabola(center=CENTER, mult=MULT, is_noise=True)
+
+
+# Construct the inputs to the fitter
 parameters = lmfit.Parameters()
-parameters.add("center", value=1, min=1, max=15)
-parameters.add("mult", value=5, min=5, max=15)
-methods = fpp.Fitterpp.mkFitterMethod(methodNames=fpp.METHOD_DIFFERENTIAL_EVOLUTION)
-methods = fpp.Fitterpp.mkFitterMethod(methodNames=fpp.METHOD_LEASTSQ)
-fitter = fpp.Fitterpp(myFunc, parameters, methods=methods)
+parameters.add("center", value=0, min=0, max=100)
+parameters.add("mult", value=0, min=0, max=100)
+methods = fpp.Fitterpp.mkFitterMethod(
+      method_names=fpp.METHOD_DIFFERENTIAL_EVOLUTION,
+      method_kwargs={fpp.MAX_NFEV: 1000})
+fitter = fpp.Fitterpp(calcParabola, parameters, DATA_DF, methods=methods)
 fitter.execute()
-import pdb; pdb.set_trace()
+# Plot the result
+center = fitter.final_params["center"].value
+mult = fitter.final_params["mult"].value
+fitted_df = calcParabola(center=center, mult=mult)
+plt.scatter(DATA_DF["x"], DATA_DF["y"])
+plt.plot(fitted_df["x"], fitted_df["y"], color="red")
+plt.show()
    

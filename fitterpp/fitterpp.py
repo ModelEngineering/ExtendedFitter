@@ -41,25 +41,33 @@ class Fitterpp():
     fitter.execute()
     """
 
-    def __init__(self, function, initial_params, methods=None, logger=None,
+    def __init__(self, user_function, initial_params, data_df, methods=None, logger=None,
           is_collect=False):
         """
         Parameters
         ----------
-        function: Funtion
+        user_function: Funtion
+           Parameters
+               keyword parameters that correspond to the names in initial_params
+           Returns
+               pd.DataFrame
+                   columns: variable returned
+                   row: instance of variable values
            Arguments
             lmfit.parameters
-            isInitialze (bool). True on first call the
-            isGetBest (bool). True to retrieve best parameters
-           returns residuals (if bool arguments are false)
-        initial_params: lmfit.parameters
-        methods: list-util.FitterMethod
+        initial_params: lmfit.Parameters (initial values of parameters)
+        data_df: pd.DataFrame
+            Has same structure as the output of the function
+        methods: list-str (e.g., "leastsq", "differential_evolution")
         """
-        self.function = function
+        self.initial_params = initial_params
+        self.user_function = user_function
+        self.data_df = data_df
+        self.fitting_columns = list(data_df.columns)
+        self.function = self._mkFitterFunction()
         self.methods = methods
         if self.methods is None:
             self.methods = self.mkFitterMethod()
-        self._initial_params = initial_params
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
@@ -80,7 +88,7 @@ class Fitterpp():
         """
         start_time = time.time()
         last_excp = None
-        self.final_params = self._initial_params.copy()
+        self.final_params = self.initial_params.copy()
         minimizer = None
         for fitter_method in self.methods:
             method = fitter_method.method
@@ -136,38 +144,38 @@ class Fitterpp():
         return "\n".join(newReportSplit)
 
     @staticmethod
-    def mkFitterMethod(methodNames=None, methodKwargs=None,
-          maxFev=cn.MAX_NFEV_DFT):
+    def mkFitterMethod(method_names=None, method_kwargs=None,
+          max_fev=cn.MAX_NFEV_DFT):
         """
         Constructs an FitterMethod
         Parameters
         ----------
-        methodNames: list-str/str
-        methodKwargs: list-dict/dict
+        method_names: list-str/str
+        method_kwargs: list-dict/dict
 
         Returns
         -------
         list-FitterMethod
         """
-        if methodNames is None:
-            methodNames = [cn.METHOD_LEASTSQ]
-        if isinstance(methodNames, str):
-            methodNames = [methodNames]
-        if methodKwargs is None:
-            methodKwargs = {}
+        if method_names is None:
+            method_names = [cn.METHOD_LEASTSQ]
+        if isinstance(method_names, str):
+            method_names = [method_names]
+        if method_kwargs is None:
+            method_kwargs = {}
         # Ensure that there is a limit of function evaluations
-        newMethodKwargs = dict(methodKwargs)
-        if cn.MAX_NFEV not in newMethodKwargs.keys():
-            newMethodKwargs[cn.MAX_NFEV] = maxFev
-        elif maxFev is None:
-            del newMethodKwargs[cn.MAX_NFEV]
-        methodKwargs = np.repeat(newMethodKwargs, len(methodNames))
+        new_method_kwargs = dict(method_kwargs)
+        if cn.MAX_NFEV not in new_method_kwargs.keys():
+            new_method_kwargs[cn.MAX_NFEV] = max_fev
+        elif max_fev is None:
+            del new_method_kwargs[cn.MAX_NFEV]
+        method_kwargs = np.repeat(new_method_kwargs, len(method_names))
         #
         results = [util.FitterMethod(n, k) for n, k  \
-              in zip(methodNames, methodKwargs)]
+              in zip(method_names, method_kwargs)]
         return results
 
-    def plotPerformance(self, isPlot=True):
+    def plotPerformance(self, is_plot=True):
         """
         Plots the statistics for running the objective function.
         """
@@ -196,10 +204,10 @@ class Fitterpp():
               xlabel="method")
         df.plot.bar(y=CNT, ax=axes[2], title="Number calls",
               xlabel="method")
-        if isPlot:
+        if is_plot:
             plt.show()
 
-    def plotQuality(self, isPlot=True):
+    def plotQuality(self, is_plot=True):
         """
         Plots the quality results
         """
@@ -225,5 +233,41 @@ class Fitterpp():
             ax.set_ylabel("SSQ")
             if idx == len(self.methods) - 1:
                 ax.set_xlabel(ITERATION)
-        if isPlot:
+        if is_plot:
             plt.show()
+
+    def _mkFitterFunction(self):
+        """
+        Creates the function used for doing fits.
+
+        Parameters
+        ----------
+        function:
+            Parameters
+                only has keyword parameters, which are the same names
+                as the parameters in lmfit.Parmeters 
+            Returns
+                DataFrame
+        df: DataFrame
+           Columns: variables
+           Index: aligned with function  output
+        
+        Returns
+        -------
+        Function
+            Parameters: lmfit.Parameters
+            Returns: array(float)
+        """
+        kw_names = set(self.initial_params.valuesdict().keys())
+        def fitter_func(parameters):
+            dct  = parameters.valuesdict()
+            parameter_names = dct.keys()
+            diff = kw_names.symmetric_difference(parameter_names)
+            if len(diff) > 0:
+                msg = "Missing or extra keywards on call to fitter function: %s" % diff
+                raise ValueError(msg)
+            function_df = self.user_function(**dct)
+            function_df = function_df[self.fitting_columns]
+            return (self.data_df - function_df).values.flatten()
+        #
+        return fitter_func
