@@ -23,6 +23,3 @@ Thus, to perform fitting, we must specify:
 * the parameters of the function that are to be adjusted;
 
 * observational data;
-
-* outputs of the function that are used in fitting (e.g., ``y``).
-
