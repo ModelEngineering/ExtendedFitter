@@ -19,7 +19,7 @@ the has two parameters:
 
 .. code-block:: python
 
-    def calcParabola(center=0, mult=1, xvalues=XVALUES, is_noise=False):
+    def calcParabola(center=None, mult=None, xvalues=XVALUES):
         estimates = np.array([mult*(n - center)**2 + for n in xvalues])
         return pd.DataFrame({"x": xvalues, "y": estimates})
 
@@ -42,7 +42,67 @@ Last, you must provide data that is used to fit the parameters.
 The data should be a ``pandas`` ``DataFrame`` that has some (or all)
 of the columns present in the output of the function to be fit.
 
+.. code-block:: python
+
+    print(data_df)
+         x           y
+    0    0  203.602263
+    1    1  168.826647
+    2    2  129.106718
+    3    3  106.392522
+    4    4   76.568092
+    5    5   53.599780
+    6    6   32.178451
+    7    7   27.475269
+    8    8   17.673933
+    9    9    5.571118
+    10  10    9.088864
+    11  11    4.040736
+    12  12   10.043712
+    13  13   20.858908
+    14  14   32.427186
+    15  15   53.417786
+    16  16   80.242909
+    17  17  104.973683
+    18  18  132.189584
+    19  19  169.439043
+
 and outputs
 a list (or list-like) of floats that are the difference between
 what the function computed for these parameter values and observational
 data.
+
+Although not required, you can specify one or more optimization methods
+to use for the fit.
+Common methods are gradient descent ("leastsq")
+and the heuristic differential evolution ("differential_evolution").
+Along with these methods, you can specify how many times the optimization
+algorithm is run before termination.
+
+.. code-block:: python
+
+    methods = fpp.Fitterpp.mkFitterMethod(
+          method_names=fpp.METHOD_DIFFERENTIAL_EVOLUTION,
+          method_kwargs={fpp.MAX_NFEV: 1000})
+
+To do a fit, use:
+
+.. code-block:: python
+
+    fitter = fpp.Fitterpp(calcParabola, parameters, data_df , methods=methods)
+    fitter.execute()
+
+To see the resulting fits:a
+
+.. code-block:: python
+
+    >print(fitter.final_params.valuesdict())
+    {'center': 9.991226336877833, 'mult': 2.072849009501976}
+
+
+The figure below displays the parabola (red line plot)
+for the above fitted parameter values
+along with the fitting data (blue scatter plot).
+
+.. image:: images/fitting_plot.png
+  :width: 400
