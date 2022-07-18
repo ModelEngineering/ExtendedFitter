@@ -28,6 +28,9 @@ import numpy as np
 import time
 
 
+ITERATION = "iteration"
+
+
 class Fitterpp():
     """
     Implements an interface to parameter fitting methods that provides
@@ -80,7 +83,7 @@ class Fitterpp():
         self.final_params = None
         self.minimizer_result = None
         self.rssq = None
-       
+
     def execute(self):
         """
         Performs parameter fitting function.
@@ -158,11 +161,11 @@ class Fitterpp():
         list-FitterMethod
         """
         if method_names is None:
-            method_names = [cn.METHOD_LEASTSQ]
+            method_names = cn.METHOD_FITTER_DEFAULTS
         if isinstance(method_names, str):
             method_names = [method_names]
         if method_kwargs is None:
-            method_kwargs = {}
+            method_kwargs = {cn.MAX_NFEV: cn.MAX_NFEV_DFT}
         # Ensure that there is a limit of function evaluations
         new_method_kwargs = dict(method_kwargs)
         if cn.MAX_NFEV not in new_method_kwargs.keys():
@@ -196,14 +199,19 @@ class Fitterpp():
             AVG: averages,
             })
         #
-        df.index = [m.method for m in self.methods]
-        _, axes = plt.subplots(1, 3)
+        tick_names = [m.method for m in self.methods]
+        tick_values = list(range(len(tick_names)))
+        df.index = tick_names
+        _, axes = plt.subplots(1, 3, figsize=(15, 5))
         df.plot.bar(y=TOT, ax=axes[0], title="Total time",
-              xlabel="method")
+              xlabel="method", fontsize=18)
         df.plot.bar(y=AVG, ax=axes[1], title="Average time",
-              xlabel="method")
+              xlabel="method", fontsize=18)
         df.plot.bar(y=CNT, ax=axes[2], title="Number calls",
-              xlabel="method")
+              xlabel="method", fontsize=18)
+        for idx in range(3):
+            axes[idx].set_xticks(tick_values, labels=tick_names,
+                  rotation=25, fontsize=18)
         if is_plot:
             plt.show()
 
@@ -215,24 +223,25 @@ class Fitterpp():
             msg = "Must construct with isCollect = True "
             msg += "to get quality plots."
             raise ValueError(msg)
-        ITERATION = "iteration"
-        _, axes = plt.subplots(len(self.methods))
-        minLength = min([len(v) for v in self.quality_stats])
+        _, axes = plt.subplots(1, len(self.methods))
         # Compute statistics
-        dct = {self.methods[i].method: self.quality_stats[i][:minLength]
+        dct = {self.methods[i].method: self.quality_stats[i]
             for i in range(len(self.methods))}
-        df = pd.DataFrame(dct)
-        df[ITERATION] = range(minLength)
         #
-        for idx, method in enumerate(self.methods):
+        for idx, method_name in enumerate(dct.keys()):
             if "AxesSubplot" in str(type(axes)):
                 ax = axes
             else:
                 ax = axes[idx]
-            df.plot.line(x=ITERATION, y=method.method, ax=ax, xlabel="")
-            ax.set_ylabel("SSQ")
-            if idx == len(self.methods) - 1:
-                ax.set_xlabel(ITERATION)
+            stats = dct[method_name]
+            xvals = range(1, len(stats)+1)
+            ax.plot(xvals, stats)
+            if idx == 0:
+                ax.set_ylabel("SSQ")
+            ax.set_xlabel(ITERATION)
+            ymax = 10*max(0.1, np.min(stats))
+            ax.set_ylim([0, ymax])
+            ax.set_title(method_name)
         if is_plot:
             plt.show()
 
@@ -245,13 +254,13 @@ class Fitterpp():
         function:
             Parameters
                 only has keyword parameters, which are the same names
-                as the parameters in lmfit.Parmeters 
+                as the parameters in lmfit.Parmeters
             Returns
                 DataFrame
         df: DataFrame
            Columns: variables
            Index: aligned with function  output
-        
+
         Returns
         -------
         Function

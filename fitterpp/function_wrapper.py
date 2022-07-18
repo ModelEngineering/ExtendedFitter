@@ -1,14 +1,6 @@
 """Abstraction for a function that has parameters to fit."""
 
 
-from fitterpp import util
-from fitterpp import constants as cn
-
-import copy
-import lmfit
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 import time
 
 
@@ -42,14 +34,14 @@ class FunctionWrapper:
 
     def execute(self, params, **kwargs):
         """
-        Runs the function using its keyword arguments. 
+        Runs the function using its keyword arguments.
         Accumulates statistics.
 
         Parameters
         ----------
         params: lmfit.Parameters
         kwargs: dict
-        
+
         Returns
         -------
         array-float

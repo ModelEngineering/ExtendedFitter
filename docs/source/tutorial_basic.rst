@@ -1,5 +1,5 @@
-Tutorial
-=========
+Tutorial for Fitting Basics
+===========================
 
 This section describes the basic usage of ``fitterpp``.
 
@@ -71,19 +71,6 @@ and outputs
 a list (or list-like) of floats that are the difference between
 what the function computed for these parameter values and observational
 data.
-
-Although not required, you can specify one or more optimization methods
-to use for the fit.
-Common methods are gradient descent ("leastsq")
-and the heuristic differential evolution ("differential_evolution").
-Along with these methods, you can specify how many times the optimization
-algorithm is run before termination.
-
-.. code-block:: python
-
-    methods = fpp.Fitterpp.mkFitterMethod(
-          method_names=fpp.METHOD_DIFFERENTIAL_EVOLUTION,
-          method_kwargs={fpp.MAX_NFEV: 1000})
 
 To do a fit, use:
 

@@ -1,5 +1,3 @@
-"""Sample code to illustrate fitterpp for a hyperbola."""
-
 import fitterpp as fpp
 import lmfit
 import matplotlib.pyplot as plt
@@ -38,11 +36,12 @@ DATA_DF = calcParabola(center=CENTER, mult=MULT, is_noise=True)
 parameters = lmfit.Parameters()
 parameters.add("center", value=0, min=0, max=100)
 parameters.add("mult", value=0, min=0, max=100)
-methods = fpp.Fitterpp.mkFitterMethod(
-      method_names=fpp.METHOD_DIFFERENTIAL_EVOLUTION,
-      method_kwargs={fpp.MAX_NFEV: 1000})
-fitter = fpp.Fitterpp(calcParabola, parameters, DATA_DF, methods=methods)
+fitter = fpp.Fitterpp(calcParabola, parameters, DATA_DF, is_collect=True)
 fitter.execute()
+# Statistics
+print(fitter.report())
+fitter.plotPerformance()
+fitter.plotQuality()
 # Plot the result
 center = fitter.final_params["center"].value
 mult = fitter.final_params["mult"].value
@@ -50,4 +49,3 @@ fitted_df = calcParabola(center=center, mult=mult)
 plt.scatter(DATA_DF["x"], DATA_DF["y"])
 plt.plot(fitted_df["x"], fitted_df["y"], color="red")
 plt.show()
-   
