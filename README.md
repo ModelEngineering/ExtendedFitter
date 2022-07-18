@@ -1,18 +1,14 @@
-# ExtendedFitter
-Extended fitter for fitting parameters.
 
-The ``Parameter`` class describes parameter constraints.
-* Constructor: parameterName, lower_bound, upper_bound
-* value: value of the parameter
-* name: name of the parameter
+# fitterpp: Simplified Parameter Fitting With Advanced Capabilities
 
-The ``ParameterManager`` class is used to manage parameters in multiple models.
+fitterpp (pronounced "fitter plus plus") extends the capabilities of ``lmfit`` in several ways:
 
-The ``ExtendedFitter`` class extends lmfit by:
-1. Ensuring that the parameters chosen have the lowest residuals sum of squares
-2. Providing for a sequence of optimization methods
-3. Providing an option to repeat a method sequence with different randomly
-   chosen initial parameter values (numRandomRestart).
-4. Provide statistics about the optimizations
-   a. Performance in terms of execution times
-   b. Quality in terms of the value of residual sum of sqares achieved
+1. simplifies parameter fitting by automating the calculation of residuals;
+
+2. ensures that the parameters reported have the smallest residual sum of squares;
+
+3. provides for running several fitting algorithm in succession;
+
+4. reports statistics on the runtime and quality of parameter fits.
+
+For more details, see readthedocs.
