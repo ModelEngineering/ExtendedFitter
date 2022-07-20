@@ -9,10 +9,16 @@ fitterpp extends lmfit optimizations by:
 3. Providing an option to repeat a method sequence with different randomly
    chosen initial parameter values (numRandomRestart).
 
-TODO
+The fitting function should operate as follows:
+    Inputs:
+        keyword argument for each parameter name
+        is_dataframe kewyword argument: returns DataFrame if True; default is False
+            If False, return nnumpy.array
+    Returns:
+        DataFrame for numpy.array
 
-1. fitterpp runs tests
-
+TODO:
+1. calc function returns np.array
 """
 
 from fitterpp.logs import Logger
@@ -52,6 +58,7 @@ class Fitterpp():
         user_function: Funtion
            Parameters
                keyword parameters that correspond to the names in initial_params
+               is_dataframe (boolean)
            Returns
                pd.DataFrame
                    columns: variable returned
@@ -66,6 +73,7 @@ class Fitterpp():
         self.initial_params = initial_params
         self.user_function = user_function
         self.data_df = data_df
+        self.data_arr = data_df.values
         self.fitting_columns = list(data_df.columns)
         self.function = self._mkFitterFunction()
         self.methods = methods
@@ -78,11 +86,31 @@ class Fitterpp():
         # Statistics
         self.performance_stats = []  # durations of function executions
         self.quality_stats = []  # residual sum of squares, a quality measure
+ 
         # Outputs
         self.duration = None  # Duration of parameter search
         self.final_params = None
         self.minimizer_result = None
         self.rssq = None
+
+    def _findFunctionArrayIndices(self):
+        """
+        Calculates the indices of arrays that correspond to the observational
+        data.
+
+        Returns
+        -------
+        list-int
+        """
+        kwargs = {k: v for k, v in self.initial_params.valuesdict()}
+        df = self.user_function(is_dataframe=True, **kwargs)
+        func_columns = list(df.columns)
+        indices = []
+        for column in self.data_df.columns:
+            if not column in func_columns:
+               raise ValueError("Missing column %s in function output" % column)
+            indices.append(func_columns.index(column))
+        return indices
 
     def execute(self):
         """
@@ -245,6 +273,7 @@ class Fitterpp():
         if is_plot:
             plt.show()
 
+    # TODO: Handle return of np.array
     def _mkFitterFunction(self):
         """
         Creates the function used for doing fits.
@@ -273,7 +302,8 @@ class Fitterpp():
             parameter_names = dct.keys()
             diff = kw_names.symmetric_difference(parameter_names)
             if len(diff) > 0:
-                msg = "Missing or extra keywards on call to fitter function: %s" % diff
+                msg = "Missing or extra keywards on call to fitter "
+                msg += "function: %s" % diff
                 raise ValueError(msg)
             function_df = self.user_function(**dct)
             function_df = function_df[self.fitting_columns]

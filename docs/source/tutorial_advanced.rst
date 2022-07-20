@@ -1,4 +1,4 @@
-Tutorial for Adanced Fitting
+Adanced Fitting
 =====================================
 
 This section describes how to use advanced features of ``fitterpp``.

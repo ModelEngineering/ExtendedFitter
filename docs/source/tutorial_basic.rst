@@ -1,4 +1,4 @@
-Tutorial for Fitting Basics
+Fitting Basics
 ===========================
 
 This section describes the basic usage of ``fitterpp``.
