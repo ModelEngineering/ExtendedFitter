@@ -6,9 +6,10 @@
 fitterpp: Simplified Parameter Fitting With Advanced Capabilities
 =================================================================
 
-fitterpp (pronounced "fitter plus plus") extends the capabilities of ``lmfit`` in several ways:
+fitterpp (pronounced "fitter plus plus") fits parameters of a function in a more
+convenient and sophisticated way than what is provided by ``lmfit``.
 
-1. simplifies parameter fitting by automating the calculation of residuals;
+1. simplifies parameter fitting to do in that users only provide the parameterized function;
 
 2. ensures that the parameters reported have the smallest residual sum of squares;
 

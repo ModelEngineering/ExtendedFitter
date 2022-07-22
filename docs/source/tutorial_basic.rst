@@ -19,12 +19,26 @@ the has two parameters:
 
 .. code-block:: python
 
-    def calcParabola(center=None, mult=None, xvalues=XVALUES):
-        estimates = np.array([mult*(n - center)**2 + for n in xvalues])
-        return pd.DataFrame({"x": xvalues, "y": estimates})
+    def calcParabola(center=None, mult=None, xvalues=range(20), is_dataframe=True):
+        estimates = np.array([mult*(n - center)**2 for n in xvalues])
+        if is_dataframe:
+            result = pd.DataFrame({"row_key": xvalues, "y": estimates})
+            result = result.set_index("row_key")
+        else:
+            result = np.array([estimates])
+            result = np.reshape(result, (len(estimates), 1))
+        return result
 
 Note that all arguments to ``calcParabola`` are specified using keywords.
-The output from the function is a ``pandas`` ``DataFrame``.
+``Fitterpp`` requires both an array and ``DataFrame`` output for efficiency reasons and to make
+the user function self-describing.
+The keyword argument ``is_dataframe`` specifies whether to return a ``numpy`` array or a ``DataFrame``.
+The array should contain only the data values.
+The ``DataFrame`` must:
+
+* contain columns names that match some of the names in data provided to ``Fitterpp``;
+* have an index with values that have a non-null intersection with index values in the data provided to ``Fitterpp``.
+
 
 You will also need to describe the parameters to be fitted.
 In our example, these are ``center`` and ``mult``.
@@ -45,27 +59,27 @@ of the columns present in the output of the function to be fit.
 .. code-block:: python
 
     print(data_df)
-         x           y
-    0    0  203.602263
-    1    1  168.826647
-    2    2  129.106718
-    3    3  106.392522
-    4    4   76.568092
-    5    5   53.599780
-    6    6   32.178451
-    7    7   27.475269
-    8    8   17.673933
-    9    9    5.571118
-    10  10    9.088864
-    11  11    4.040736
-    12  12   10.043712
-    13  13   20.858908
-    14  14   32.427186
-    15  15   53.417786
-    16  16   80.242909
-    17  17  104.973683
-    18  18  132.189584
-    19  19  169.439043
+    row_key   y
+    0       203.602263
+    1       168.826647
+    2       129.106718
+    3       106.392522
+    4        76.568092
+    5        53.599780
+    6        32.178451
+    7        27.475269
+    8        17.673933
+    9         5.571118
+    10        9.088864
+    11        4.040736
+    12       10.043712
+    13       20.858908
+    14       32.427186
+    15       53.417786
+    16       80.242909
+    17      104.973683
+    18      132.189584
+    19      169.439043
 
 and outputs
 a list (or list-like) of floats that are the difference between

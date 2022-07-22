@@ -3,19 +3,20 @@
 
 Created on July 4, 2022
 
-fitterpp extends lmfit optimizations by:
-1. Ensuring that the parameters chosen have the lowest residuals sum of squares
-2. Providing for a sequence of optimization methods
-3. Providing an option to repeat a method sequence with different randomly
+fitterpp fits parameters of a function. Key features are;
+1. Simplify fitting parameters to data;
+2. Ensuring that the parameters chosen have the lowest residuals sum of squares
+3. More sophisticated choice of optimization algorithms, such as using
+   a sequence of algorithms and repeat a method sequence with different randomly
    chosen initial parameter values (numRandomRestart).
 
 The fitting function should operate as follows:
     Inputs:
         keyword argument for each parameter name
-        is_dataframe kewyword argument: returns DataFrame if True; default is False
-            If False, return nnumpy.array
+        is_dataframe kewyword argument: returns DataFrame if True
     Returns:
-        DataFrame for numpy.array
+        DataFrame for numpy.array. Index is the row key.
+        Arr: 2d array (even if only 1 column)
 
 TODO:
 1. calc function returns np.array
@@ -35,6 +36,53 @@ import time
 
 
 ITERATION = "iteration"
+
+
+class DFIntersectionFinder:
+
+    # Finds the rows and columns that are common between two dataframes.
+    # Provides the array index for the common rows and columns.
+    #    self.row_idxs
+    #    self.column_idxs
+
+    def __init__(self, df, other_df):
+        """
+        Parameters
+        ----------
+        arr: array or array like
+        other_arr: array or array like
+        """
+        self.df = df
+        self.other_df = other_df
+        # Common row indices
+        indices = list(df.index)
+        other_indices = list(other_df.index)
+        self.row_idxs = np.array([i for i in range(len(df))
+              if indices[i] in other_indices])
+        # Common column indices
+        columns = list(df.columns)
+        other_columns = list(other_df.columns)
+        self.column_idxs = np.array([i for i in range(len(df.columns))
+              if columns[i] in other_columns])
+
+    def isCorrectShape(self, arr):
+        """
+        Validates that an array has the correct shape.
+
+        Parameters
+        ----------
+        arr: np.array
+        
+        Returns
+        -------
+        bool
+        """
+        expected_shape = [len(self.row_idxs), len(self.column_idxs)]
+        try:
+            np.testing.assert_array_equal(np.shape(arr), expected_shape)
+            return True
+        except:
+            return False
 
 
 class Fitterpp():
@@ -73,7 +121,8 @@ class Fitterpp():
         self.initial_params = initial_params
         self.user_function = user_function
         self.data_df = data_df
-        self.data_arr = data_df.values
+        # The values array does not include the key
+        self.is_collect = is_collect
         self.fitting_columns = list(data_df.columns)
         self.function = self._mkFitterFunction()
         self.methods = methods
@@ -82,7 +131,20 @@ class Fitterpp():
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
-        self.is_collect = is_collect
+        # Common indexes 
+        kwargs = self.makeKwargs(self.initial_params)
+        function_df = self.user_function(is_dataframe=True, **kwargs)
+        self.function_common = DFIntersectionFinder(function_df, self.data_df)
+        self.data_common = DFIntersectionFinder(self.data_df, function_df)
+        self.data_arr = self.data_df.values[self.data_common.row_idxs,
+              self.data_common.column_idxs]
+        self.data_arr.flatten()
+        # Validate the output
+        function_arr = self.user_function(is_dataframe=False, **kwargs)
+        if not self.function_common.isCorrectShape(function_arr):
+            msg = "The user function does not create an array "
+            msg += "shape consistent with its DataFrame."
+            raise ValueError(msg)
         # Statistics
         self.performance_stats = []  # durations of function executions
         self.quality_stats = []  # residual sum of squares, a quality measure
@@ -93,24 +155,23 @@ class Fitterpp():
         self.minimizer_result = None
         self.rssq = None
 
-    def _findFunctionArrayIndices(self):
+    @staticmethod
+    def makeKwargs(parameters):
         """
-        Calculates the indices of arrays that correspond to the observational
-        data.
+        Creates a key word dictionary from the parameters.
 
+        Parameters
+        ----------
+        parameters: lmfit.Parameters
+        
         Returns
         -------
-        list-int
+        dict
         """
-        kwargs = {k: v for k, v in self.initial_params.valuesdict()}
-        df = self.user_function(is_dataframe=True, **kwargs)
-        func_columns = list(df.columns)
-        indices = []
-        for column in self.data_df.columns:
-            if not column in func_columns:
-               raise ValueError("Missing column %s in function output" % column)
-            indices.append(func_columns.index(column))
-        return indices
+        kwargs = {}
+        for key, value in parameters.valuesdict().items():
+            kwargs[key] = value
+        return kwargs
 
     def execute(self):
         """
@@ -228,7 +289,7 @@ class Fitterpp():
             })
         #
         tick_names = [m.method for m in self.methods]
-        tick_values = list(range(len(tick_names)))
+        tick_vals = list(range(len(tick_names)))
         df.index = tick_names
         _, axes = plt.subplots(1, 3, figsize=(15, 5))
         df.plot.bar(y=TOT, ax=axes[0], title="Total time",
@@ -238,7 +299,7 @@ class Fitterpp():
         df.plot.bar(y=CNT, ax=axes[2], title="Number calls",
               xlabel="method", fontsize=18)
         for idx in range(3):
-            axes[idx].set_xticks(tick_values, labels=tick_names,
+            axes[idx].set_xticks(tick_vals, labels=tick_names,
                   rotation=25, fontsize=18)
         if is_plot:
             plt.show()
@@ -273,7 +334,6 @@ class Fitterpp():
         if is_plot:
             plt.show()
 
-    # TODO: Handle return of np.array
     def _mkFitterFunction(self):
         """
         Creates the function used for doing fits.
@@ -305,8 +365,9 @@ class Fitterpp():
                 msg = "Missing or extra keywards on call to fitter "
                 msg += "function: %s" % diff
                 raise ValueError(msg)
-            function_df = self.user_function(**dct)
-            function_df = function_df[self.fitting_columns]
-            return (self.data_df - function_df).values.flatten()
+            function_arr = self.user_function(is_dataframe=False, **dct)
+            function_arr = function_arr[self.function_common.row_idxs,
+                  self.function_common.column_idxs].flatten()
+            return (self.data_arr - function_arr)
         #
         return fitter_func
