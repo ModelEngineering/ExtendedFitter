@@ -16,4 +16,7 @@ For more details, see
 ).
 
 # Version History
+* 0.0.3 
+* 0.0.2 7/22/2022.
+    User function must be self-describing, optionally returning a dataframe
 * 0.0.1 7/19/2022. First release.
