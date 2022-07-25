@@ -6,16 +6,14 @@
 fitterpp: Simplified Parameter Fitting With Advanced Capabilities
 =================================================================
 
-fitterpp (pronounced "fitter plus plus") fits parameters of a function in a more
-convenient and sophisticated way than what is provided by ``lmfit``.
+fitterpp (pronounced "fitter plus plus") fits a parameterized function to data.
+Some key features are:
 
-1. simplifies parameter fitting to do in that users only provide the parameterized function;
+1. Simplicity. Users only provide a parameterized function, data, and descriptions of parameters.
 
-2. ensures that the parameters reported have the smallest residual sum of squares;
+2. Sophistication. Provides for running several fitting algorithm in succession, and starting from multiple initial values.
 
-3. provides for running several fitting algorithm in succession;
-
-4. reports statistics on the runtime and quality of parameter fits.
+4. Statistics. Provides information on the runtime and quality of parameter fits.
 
 
 .. toctree::
