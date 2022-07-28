@@ -137,8 +137,8 @@ class Fitterpp():
         self.function_common = DFIntersectionFinder(function_df,
               self.data_df)
         self.data_common = DFIntersectionFinder(self.data_df, function_df)
-        self.data_arr = self.data_df.values[self.data_common.row_idxs, :]
-        self.data_arr = self.data_arr[:, self.data_common.column_idxs]
+        self.data_arr = self.data_df.values[:, self.data_common.column_idxs]
+        self.data_arr = self.data_arr[self.data_common.row_idxs, :]
         self.data_arr = self.data_arr.flatten()
         # Validate the output
         function_arr = self.user_function(is_dataframe=False, **kwargs)
@@ -335,6 +335,26 @@ class Fitterpp():
         if is_plot:
             plt.show()
 
+    @staticmethod
+    def _make2dArray(arr):
+        """
+        Makes the array two dimensional if it isn't already.
+
+        Parameters
+        ----------
+        arr: np.array-float
+
+        Returns
+        -------
+        arr: np.array-float - 2d
+        """
+        if arr.ndim == 2:
+            return arr
+        if arr.ndim == 1:
+            nrow = len(arr)
+            return np.reshape(arr, (nrow, 1))
+        raise RuntimeError("Unexpected array shape.")
+
     def _mkFitterFunction(self):
         """
         Creates the function used for doing fits.
@@ -370,6 +390,8 @@ class Fitterpp():
             function_arr = function_arr[:, self.function_common.column_idxs]
             function_arr = function_arr[self.function_common.row_idxs, :]
             function_arr = function_arr.flatten()
-            return (self.data_arr - function_arr)
+            residuals = self.data_arr - function_arr
+            trues = [isinstance(v, float) for v in residuals.flatten()]
+            return residuals
         #
         return fitter_func
