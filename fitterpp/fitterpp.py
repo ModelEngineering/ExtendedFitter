@@ -49,8 +49,8 @@ class DFIntersectionFinder:
         """
         Parameters
         ----------
-        arr: array or array like
-        other_arr: array or array like
+        df: DataFrame
+        other_df: DataFram
         """
         self.df = df
         self.other_df = other_df
@@ -134,10 +134,11 @@ class Fitterpp():
         # Common indexes 
         kwargs = self.makeKwargs(self.initial_params)
         function_df = self.user_function(is_dataframe=True, **kwargs)
-        self.function_common = DFIntersectionFinder(function_df, self.data_df)
+        self.function_common = DFIntersectionFinder(function_df,
+              self.data_df)
         self.data_common = DFIntersectionFinder(self.data_df, function_df)
-        self.data_arr = self.data_df.values[:, self.data_common.column_idxs]
-        self.data_arr = self.data_arr[self.data_common.row_idxs, :]
+        self.data_arr = self.data_df.values[self.data_common.row_idxs, :]
+        self.data_arr = self.data_arr[:, self.data_common.column_idxs]
         self.data_arr = self.data_arr.flatten()
         # Validate the output
         function_arr = self.user_function(is_dataframe=False, **kwargs)

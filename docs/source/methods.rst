@@ -2,7 +2,7 @@ Methods
 =============
 
 .. autoclass:: fitterpp.Fitterpp
-.. autofunction:: fitterpp.Fitterpp.execute
-.. autofunction:: fitterpp.Fitterpp.report
-.. autofunction:: fitterpp.Fitterpp.plotQuality
-.. autofunction:: fitterpp.Fitterpp.plotPerformance
+.. automethod:: fitterpp.Fitterpp.execute
+.. automethod:: fitterpp.Fitterpp.report
+.. automethod:: fitterpp.Fitterpp.plotQuality
+.. automethod:: fitterpp.Fitterpp.plotPerformance
