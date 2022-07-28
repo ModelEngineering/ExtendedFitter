@@ -136,9 +136,9 @@ class Fitterpp():
         function_df = self.user_function(is_dataframe=True, **kwargs)
         self.function_common = DFIntersectionFinder(function_df, self.data_df)
         self.data_common = DFIntersectionFinder(self.data_df, function_df)
-        self.data_arr = self.data_df.values[self.data_common.row_idxs,
-              self.data_common.column_idxs]
-        self.data_arr.flatten()
+        self.data_arr = self.data_df.values[:, self.data_common.column_idxs]
+        self.data_arr = self.data_arr[self.data_common.row_idxs, :]
+        self.data_arr = self.data_arr.flatten()
         # Validate the output
         function_arr = self.user_function(is_dataframe=False, **kwargs)
         if not self.function_common.isCorrectShape(function_arr):
@@ -366,8 +366,9 @@ class Fitterpp():
                 msg += "function: %s" % diff
                 raise ValueError(msg)
             function_arr = self.user_function(is_dataframe=False, **dct)
-            function_arr = function_arr[self.function_common.row_idxs,
-                  self.function_common.column_idxs].flatten()
+            function_arr = function_arr[:, self.function_common.column_idxs]
+            function_arr = function_arr[self.function_common.row_idxs, :]
+            function_arr = function_arr.flatten()
             return (self.data_arr - function_arr)
         #
         return fitter_func
