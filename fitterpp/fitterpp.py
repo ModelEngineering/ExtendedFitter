@@ -300,7 +300,8 @@ class Fitterpp():
         df.plot.bar(y=CNT, ax=axes[2], title="Number calls",
               xlabel="method", fontsize=18)
         for idx in range(3):
-            axes[idx].set_xticks(tick_vals, labels=tick_names,
+            axes[idx].set_xticks(tick_vals)
+            axes[idx].set_xticklabels(tick_names,
                   rotation=25, fontsize=18)
         if is_plot:
             plt.show()
