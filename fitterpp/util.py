@@ -9,6 +9,7 @@ import scipy.stats as stats
 
 MIN_FRAC = 0.5
 MAX_FRAC = 2.0
+VALUE_FRAC = 1.0
 
 
 def calcRelError(actual:float, estimated:float, isAbsolute:bool=True):
@@ -196,7 +197,8 @@ def updateParameterValues(parameters, newValuesDct):
         parameters[parameterName].set(
               value=newValuesDct[parameterName])
 
-def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC):
+def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
+      value_frac=VALUE_FRAC):
     """
     Converts a dictionary to parameters according to the argument
     specifications.
@@ -220,7 +222,8 @@ def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC):
             raise ValueError("Cannot pass a 0 val")
         min_val = val*min_frac
         max_val = val*max_frac
-        parameters.add(name=name, value=val, min=min_val, max=max_val)
+        value_val = val*value_frac
+        parameters.add(name=name, value=value_val, min=min_val, max=max_val)
     return parameters
 
 ######################### CLASSES ########

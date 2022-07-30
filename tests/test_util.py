@@ -95,6 +95,9 @@ class TestFunctions(unittest.TestCase):
         dct = {"a": 3, "b": 4}
         parameters = util.dictToParameters(dct)
         self.assertTrue(isinstance(parameters, lmfit.Parameters))
+        parameters = util.dictToParameters(dct, value_frac=0.5)
+        self.assertTrue(np.isclose(parameters.valuesdict()["a"], dct["a"]*0.5))
+         
 
 
 if __name__ == '__main__':
