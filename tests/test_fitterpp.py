@@ -203,7 +203,7 @@ class TestFitterpp(unittest.TestCase):
         self.assertTrue(cn.METHOD_DIFFERENTIAL_EVOLUTION in report)
         if IS_PLOT:
             print(report)
-        
+
 
 if __name__ == '__main__':
     unittest.main()
