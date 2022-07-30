@@ -7,6 +7,7 @@ Created on Nov 11, 2020
 from fitterpp import util
 
 import copy
+import lmfit
 import numpy as np
 import os
 import unittest
@@ -81,10 +82,19 @@ class TestFunctions(unittest.TestCase):
             test(cls(1))
 
     def testPpDct(self):
+        if IGNORE_TEST:
+            return
         SIZE = 10
         dct = {n: str(n) for n in range(SIZE)}
         result = util.ppDict(dct)
         self.assertEqual(result.count("\n"), SIZE-1)
+
+    def testDictToParameters(self):
+        if IGNORE_TEST:
+            return
+        dct = {"a": 3, "b": 4}
+        parameters = util.dictToParameters(dct)
+        self.assertTrue(isinstance(parameters, lmfit.Parameters))
 
 
 if __name__ == '__main__':

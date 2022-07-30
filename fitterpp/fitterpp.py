@@ -118,7 +118,7 @@ class Fitterpp():
             Has same structure as the output of the function
         methods: list-str (e.g., "leastsq", "differential_evolution")
         """
-        self.initial_params = initial_params
+        self.initial_params = initial_params.copy()
         self.user_function = user_function
         self.data_df = data_df
         # The values array does not include the key

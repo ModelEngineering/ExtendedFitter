@@ -3,8 +3,12 @@ from fitterpp import constants as cn
 
 import copy
 import inspect
+import lmfit
 import numpy as np
 import scipy.stats as stats
+
+MIN_FRAC = 0.5
+MAX_FRAC = 2.0
 
 
 def calcRelError(actual:float, estimated:float, isAbsolute:bool=True):
@@ -192,6 +196,34 @@ def updateParameterValues(parameters, newValuesDct):
         parameters[parameterName].set(
               value=newValuesDct[parameterName])
 
+def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC):
+    """
+    Converts a dictionary to parameters according to the argument
+    specifications.
+
+    Parameters
+    ----------
+    dct: dict
+        key: name of parameter
+        value: initial value
+    min_frac: fraction of value to set as parameter min
+    max_frac: fraction of value to set as parameter min
+    
+    Returns
+    -------
+    lmfit.Parameters
+    """
+    parameters = lmfit.Parameters()
+    for name, value in dct.items():
+        val = float(value)
+        if np.isclose(val, 0.0):
+            raise ValueError("Cannot pass a 0 val")
+        min_val = val*min_frac
+        max_val = val*max_frac
+        parameters.add(name=name, value=val, min=min_val, max=max_val)
+    return parameters
+
+######################### CLASSES ########
 class FitterMethod():
 
     """Container for optimization information"""
