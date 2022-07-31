@@ -271,15 +271,28 @@ class Fitterpp():
     def plotPerformance(self, is_plot=True):
         """
         Plots the statistics for running the objective function.
+
+        Parameters
+        ----------
+        is_plot: bool (plot the output)
+
+        Returns
+        -------
+        pd.DataFrame
+            Columns	
+                tot: total_times,
+                cnt: counts,
+                avg: averages,
+            index: method
         """
         if not self.is_collect:
             msg = "Must construct with isCollect = True "
             msg += "to get performance plot."
             raise ValueError(msg)
         # Compute statistics
-        TOT = "Tot"
-        CNT = "Cnt"
-        AVG = "Avg"
+        TOT = "tot"
+        CNT = "cnt"
+        AVG = "avg"
         total_times = [sum(v) for v in self.performance_stats]
         counts = [len(v) for v in self.performance_stats]
         averages = [np.mean(v) for v in self.performance_stats]
@@ -305,10 +318,21 @@ class Fitterpp():
                   rotation=25, fontsize=18)
         if is_plot:
             plt.show()
+        return df
 
     def plotQuality(self, is_plot=True):
         """
         Plots the quality results
+
+        Parameters
+        ----------
+        is_plot: bool (plot the output)
+
+        Returns
+        -------
+        dict
+            key: method name
+            value: list-float (residual sum of squares)
         """
         if not self.is_collect:
             msg = "Must construct with isCollect = True "
@@ -335,6 +359,7 @@ class Fitterpp():
             ax.set_title(method_name)
         if is_plot:
             plt.show()
+        return dct
 
     @staticmethod
     def _make2dArray(arr):
