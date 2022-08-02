@@ -280,9 +280,9 @@ class Fitterpp():
         -------
         pd.DataFrame
             Columns	
-                tot: total_times,
-                cnt: counts,
-                avg: averages,
+                tot: total_times
+                cnt: counts
+                avg: averages
             index: method
 
         """
