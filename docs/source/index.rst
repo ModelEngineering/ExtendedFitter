@@ -13,7 +13,7 @@ Some key features are:
 
 2. Sophistication. Provides for running several fitting algorithm in succession, and starting from multiple initial values.
 
-4. Statistics. Provides information on the runtime and quality of parameter fits.
+3. Statistics. Provides information on the runtime and quality of parameter fits.
 
 
 .. toctree::

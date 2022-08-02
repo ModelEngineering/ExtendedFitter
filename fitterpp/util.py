@@ -201,7 +201,7 @@ def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
       value_frac=VALUE_FRAC):
     """
     Converts a dictionary to parameters according to the argument
-    specifications.
+    specifications. Parameters near 0 are ignored.
 
     Parameters
     ----------
@@ -219,11 +219,14 @@ def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
     for name, value in dct.items():
         val = float(value)
         if np.isclose(val, 0.0):
-            raise ValueError("Cannot pass a 0 val")
+            continue
         min_val = val*min_frac
         max_val = val*max_frac
         value_val = val*value_frac
-        parameters.add(name=name, value=value_val, min=min_val, max=max_val)
+        try:
+            parameters.add(name=name, value=value_val, min=min_val, max=max_val)
+        except KeyError:
+            continue
     return parameters
 
 ######################### CLASSES ########
