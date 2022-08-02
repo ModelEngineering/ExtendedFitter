@@ -284,6 +284,7 @@ class Fitterpp():
                 cnt: counts,
                 avg: averages,
             index: method
+
         """
         if not self.is_collect:
             msg = "Must construct with isCollect = True "
