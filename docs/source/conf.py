@@ -12,6 +12,10 @@
 #
 import os
 import sys
+import lmfit
+import inspect
+import numpy as np
+import scipy.stats as stats
 sys.path.insert(0, os.path.abspath('../..'))
 
 
