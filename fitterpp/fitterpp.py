@@ -98,8 +98,9 @@ class Fitterpp():
     fitter.execute()
     """
 
-    def __init__(self, user_function, initial_params, data_df, methods=None, logger=None,
-          is_collect=False):
+    def __init__(self, user_function, initial_params, data_df,
+          method_names=None, max_fev=cn.MAX_NFEV_DFT,
+          logger=None, is_collect=False):
         """
         Parameters
         ----------
@@ -116,7 +117,9 @@ class Fitterpp():
         initial_params: lmfit.Parameters (initial values of parameters)
         data_df: pd.DataFrame
             Has same structure as the output of the function
-        methods: list-str (e.g., "leastsq", "differential_evolution")
+        method_names: list-str/FitterppMethod
+            Examples of names: "leastsq", "differential_evolution"
+        max_fev: int (Maximum number of function evaluations)
         """
         self.initial_params = initial_params.copy()
         self.user_function = user_function
@@ -125,9 +128,13 @@ class Fitterpp():
         self.is_collect = is_collect
         self.fitting_columns = list(data_df.columns)
         self.function = self._mkFitterFunction()
-        self.methods = methods
-        if self.methods is None:
-            self.methods = self.mkFitterMethod()
+        if isinstance(method_names[0], util.FitterppMethod):
+            self.methods = method_names
+        elif isinstance(method_names[0], str):
+            self.methods = self.mkFitterppMethod(method_names=method_names,
+                max_fev=max_fev)
+        else:
+            raise ValueError("Invalid specification of method_names")
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
@@ -237,10 +244,10 @@ class Fitterpp():
         return "\n".join(newReportSplit)
 
     @staticmethod
-    def mkFitterMethod(method_names=None, method_kwargs=None,
+    def mkFitterppMethod(method_names=None, method_kwargs=None,
           max_fev=cn.MAX_NFEV_DFT):
         """
-        Constructs an FitterMethod
+        Constructs an FitterppMethod
         Parameters
         ----------
         method_names: list-str/str
@@ -248,7 +255,7 @@ class Fitterpp():
 
         Returns
         -------
-        list-FitterMethod
+        list-FitterppMethod
         """
         if method_names is None:
             method_names = cn.METHOD_FITTER_DEFAULTS
@@ -264,7 +271,7 @@ class Fitterpp():
             del new_method_kwargs[cn.MAX_NFEV]
         method_kwargs = np.repeat(new_method_kwargs, len(method_names))
         #
-        results = [util.FitterMethod(n, k) for n, k  \
+        results = [util.FitterppMethod(n, k) for n, k  \
               in zip(method_names, method_kwargs)]
         return results
 

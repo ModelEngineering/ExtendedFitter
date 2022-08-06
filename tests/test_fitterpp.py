@@ -100,9 +100,9 @@ class TestDataframeCommon(unittest.TestCase):
         if IGNORE_TEST:
             return
         df = calcParabola(center=2, mult=2, is_dataframe=True)
-        methods = Fitterpp.mkFitterMethod(
+        methods = Fitterpp.mkFitterppMethod(
               method_names=["differential_evolution"], max_fev=1000)
-        fitter = Fitterpp(calcParabola, PARAMS, DATA_DF, methods=methods)
+        fitter = Fitterpp(calcParabola, PARAMS, DATA_DF, method_names=methods)
         arr = calcParabola(center=2, mult=2, is_dataframe=False)
         self.assertTrue(fitter.function_common.isCorrectShape(arr))
         #
@@ -116,10 +116,9 @@ class TestFitterpp(unittest.TestCase):
     def setUp(self):
         self.function = calcParabola
         self.params = copy.deepcopy(PARAMS)
-        self.methods = Fitterpp.mkFitterMethod(
-              method_names=["differential_evolution"], max_fev=1000)
+        self.method_names = ["differential_evolution"]
         self.fitter = Fitterpp(self.function, self.params, DATA_DF,
-              methods=self.methods)
+              method_names=self.method_names, max_fev=1000)
 
     def testConstructor(self):
         if IGNORE_TEST:
@@ -150,14 +149,14 @@ class TestFitterpp(unittest.TestCase):
         params = lmfit.Parameters()
         for key, value in PARABOLA_PRMS.items():
             params.add(key, value=0, min=0, max=10*value)
-        methods = Fitterpp.mkFitterMethod(
+        methods = Fitterpp.mkFitterppMethod(
               method_names=["differential_evolution"],
               max_fev=1000)
-        fitter = Fitterpp(calcParabola, params, DATA_DF, methods=methods)
+        fitter = Fitterpp(calcParabola, params, DATA_DF, method_names=methods)
         fitter.execute()
         test(fitter)
 
-    def testMkFitterMethod(self):
+    def testMkFitterppMethod(self):
         if IGNORE_TEST:
             return
         def test(results):
@@ -166,31 +165,31 @@ class TestFitterpp(unittest.TestCase):
                 self.assertTrue(isinstance(result.kwargs, dict))
                 self.assertTrue(cn.MAX_NFEV in result.kwargs.keys())
         #
-        test(Fitterpp.mkFitterMethod())
-        test(Fitterpp.mkFitterMethod(method_names="aa"))
-        test(Fitterpp.mkFitterMethod(method_names=["aa", "bb"]))
-        test(Fitterpp.mkFitterMethod(method_names=["aa", "bb"],
+        test(Fitterpp.mkFitterppMethod())
+        test(Fitterpp.mkFitterppMethod(method_names="aa"))
+        test(Fitterpp.mkFitterppMethod(method_names=["aa", "bb"]))
+        test(Fitterpp.mkFitterppMethod(method_names=["aa", "bb"],
               method_kwargs={cn.MAX_NFEV: 10}))
 
     def testPlotPerformance(self):
         if IGNORE_TEST:
             return
-        methods = Fitterpp.mkFitterMethod(
+        methods = Fitterpp.mkFitterppMethod(
               method_names=[cn.METHOD_LEASTSQ,
               cn.METHOD_DIFFERENTIAL_EVOLUTION])
         fitter = Fitterpp(self.function, self.params, DATA_DF,
-              methods=methods, is_collect=True)
+              method_names=methods, is_collect=True)
         fitter.execute()
         fitter.plotPerformance(is_plot=IS_PLOT)
 
     def testPlotQuality(self):
         if IGNORE_TEST:
             return
-        methods = Fitterpp.mkFitterMethod(
+        methods = Fitterpp.mkFitterppMethod(
               method_names=[cn.METHOD_DIFFERENTIAL_EVOLUTION,
                     cn.METHOD_LEASTSQ])
         fitter = Fitterpp(self.function, self.params, DATA_DF,
-              methods=methods,
+              method_names=methods,
               is_collect=True)
         fitter.execute()
         fitter.plotQuality(is_plot=IS_PLOT)

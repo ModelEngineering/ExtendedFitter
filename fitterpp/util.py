@@ -236,7 +236,7 @@ def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
     return parameters
 
 ######################### CLASSES ########
-class FitterMethod():
+class FitterppMethod():
 
     """Container for optimization information"""
 
