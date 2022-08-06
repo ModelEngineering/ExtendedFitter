@@ -128,7 +128,9 @@ class Fitterpp():
         self.is_collect = is_collect
         self.fitting_columns = list(data_df.columns)
         self.function = self._mkFitterFunction()
-        if isinstance(method_names[0], util.FitterppMethod):
+        if method_names is None:
+            self.methods = self.mkFitterppMethod()
+        elif isinstance(method_names[0], util.FitterppMethod):
             self.methods = method_names
         elif isinstance(method_names[0], str):
             self.methods = self.mkFitterppMethod(method_names=method_names,
