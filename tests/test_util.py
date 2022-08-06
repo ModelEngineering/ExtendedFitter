@@ -13,8 +13,8 @@ import os
 import unittest
 
 
-IGNORE_TEST = False
-IS_PLOT = False
+IGNORE_TEST = True
+IS_PLOT = True
 
 
 class TestFunctions(unittest.TestCase):
@@ -90,14 +90,19 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(result.count("\n"), SIZE-1)
 
     def testDictToParameters(self):
-        if IGNORE_TEST:
-            return
+        # TESTING
         dct = {"a": 3, "b": 4}
         parameters = util.dictToParameters(dct)
         self.assertTrue(isinstance(parameters, lmfit.Parameters))
         parameters = util.dictToParameters(dct, value_frac=0.5)
         self.assertTrue(np.isclose(parameters.valuesdict()["a"], dct["a"]*0.5))
-         
+        #
+        for _ in range(10):
+            parameters = util.dictToParameters(dct, value_frac=0.5, min_frac=0.5,
+                  max_frac=2.0, is_random_initial=True)
+            for name, value in parameters.valuesdict().items():
+                self.assertGreaterEqual(value, parameters.get(name).min)
+                self.assertLessEqual(value, parameters.get(name).max)
 
 
 if __name__ == '__main__':

@@ -198,7 +198,7 @@ def updateParameterValues(parameters, newValuesDct):
               value=newValuesDct[parameterName])
 
 def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
-      value_frac=VALUE_FRAC):
+      value_frac=VALUE_FRAC, is_random_initial=False):
     """
     Converts a dictionary to parameters according to the argument
     specifications. Parameters near 0 are ignored.
@@ -208,8 +208,10 @@ def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
     dct: dict
         key: name of parameter
         value: initial value
-    min_frac: fraction of value to set as parameter min
-    max_frac: fraction of value to set as parameter min
+    min_frac: float (fraction of value to set as parameter min)
+    max_frac: float (fraction of value to set as parameter min)
+    value_frac: float (set initial to a fraction of the value)
+    is_random_initial: bool (initial value is random between min & max)
     
     Returns
     -------
@@ -222,7 +224,11 @@ def dictToParameters(dct, min_frac=MIN_FRAC, max_frac=MAX_FRAC,
             continue
         min_val = val*min_frac
         max_val = val*max_frac
-        value_val = val*value_frac
+        if is_random_initial:
+            rand = np.random.rand()
+            value_val = min_val + rand*(max_val - min_val)
+        else:
+            value_val = val*value_frac
         try:
             parameters.add(name=name, value=value_val, min=min_val, max=max_val)
         except KeyError:
