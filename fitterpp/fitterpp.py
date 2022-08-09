@@ -129,7 +129,7 @@ class Fitterpp():
         self.fitting_columns = list(data_df.columns)
         self.function = self._mkFitterFunction()
         if method_names is None:
-            self.methods = self.mkFitterppMethod()
+            self.methods = self.mkFitterppMethod(max_fev=max_fev)
         elif isinstance(method_names[0], util.FitterppMethod):
             self.methods = method_names
         elif isinstance(method_names[0], str):
@@ -264,7 +264,7 @@ class Fitterpp():
         if isinstance(method_names, str):
             method_names = [method_names]
         if method_kwargs is None:
-            method_kwargs = {cn.MAX_NFEV: cn.MAX_NFEV_DFT}
+            method_kwargs = {cn.MAX_NFEV: max_fev}
         # Ensure that there is a limit of function evaluations
         new_method_kwargs = dict(method_kwargs)
         if cn.MAX_NFEV not in new_method_kwargs.keys():
