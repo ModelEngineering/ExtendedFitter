@@ -1,4 +1,3 @@
-
 from fitterpp import constants as cn
 
 import copy
