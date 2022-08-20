@@ -188,7 +188,7 @@ class Fitterpp():
         Performs parameter fitting function.
         Result is self.final_params
         """
-        start_time = time.time()
+        start_time = time.clock()
         last_excp = None
         self.final_params = self.initial_params.copy()
         minimizer = None
@@ -211,7 +211,7 @@ class Fitterpp():
             msg = "*** Optimization failed."
             self.logger.error(msg, last_excp)
         else:
-            self.duration = time.time() - start_time
+            self.duration = time.clock() - start_time
 
     def report(self):
         """

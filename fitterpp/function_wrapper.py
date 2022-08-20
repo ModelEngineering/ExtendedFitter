@@ -7,6 +7,11 @@ import time
 class FunctionWrapper:
     # Wraps a function used for fitting.
 
+    # Calculate reference time to adjust for CPU differences
+    base_time = time.clock()
+    _ = sum(range(int(1e8)))  # Calculation
+    reference_time = time.clock() - base_time
+
     def __init__(self, function, is_collect=False):
         """
         Parameters
@@ -47,10 +52,10 @@ class FunctionWrapper:
         array-float
         """
         if self.is_collect:
-            startTime = time.time()
+            startTime = time.clock()
         result = self._function(params, **kwargs)
         if self.is_collect:
-            duration = time.time() - startTime
+            duration = (time.clock() - startTime)/reference_time
         rssq = FunctionWrapper.calcSSQ(result)
         if rssq < self.rssq:
             self.rssq = rssq
