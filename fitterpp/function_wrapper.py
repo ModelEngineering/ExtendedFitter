@@ -55,7 +55,7 @@ class FunctionWrapper:
             startTime = time.clock()
         result = self._function(params, **kwargs)
         if self.is_collect:
-            duration = (time.clock() - startTime)/reference_time
+            duration = (time.clock() - startTime)/self.reference_time
         rssq = FunctionWrapper.calcSSQ(result)
         if rssq < self.rssq:
             self.rssq = rssq
