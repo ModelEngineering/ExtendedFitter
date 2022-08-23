@@ -9,7 +9,7 @@ import fitterpp.constants as cn
 from fitterpp.fitterpp import Fitterpp, DFIntersectionFinder
 from fitterpp import util
 from fitterpp.logs import Logger
-from tests import helpers
+import helpers
 
 import collections
 import copy
@@ -138,23 +138,30 @@ class TestFitterpp(unittest.TestCase):
         arr = self.fitter.user_function(is_dataframe=False, **kwargs)
         self.fitter.function_common.isCorrectShape(arr)
 
-    def testExecute(self):
+    def testFit(self):
         if IGNORE_TEST:
             return
-        def test(fitter):
+        def test(num_latincube):
+            params = lmfit.Parameters()
+            for key, value in PARABOLA_PRMS.items():
+                params.add(key, value=0, min=0, max=10*value)
+            methods = Fitterpp.mkFitterppMethod(
+                  method_names=["differential_evolution"],
+                  max_fev=100)
+            fitter = Fitterpp(calcParabola, params, DATA_DF, method_names=methods,
+                  num_latincube=num_latincube)
+            fitter.fit()
             for key, value in PARABOLA_PRMS.items():
                 true_value = value
                 fitted_value = fitter.final_params.valuesdict()[key]
-                self.assertLess(np.abs(true_value - fitted_value), 0.1)
-        params = lmfit.Parameters()
-        for key, value in PARABOLA_PRMS.items():
-            params.add(key, value=0, min=0, max=10*value)
-        methods = Fitterpp.mkFitterppMethod(
-              method_names=["differential_evolution"],
-              max_fev=1000)
-        fitter = Fitterpp(calcParabola, params, DATA_DF, method_names=methods)
-        fitter.execute()
-        test(fitter)
+                #self.assertLess(np.abs(true_value - fitted_value), 0.1)
+            return fitter
+        #
+        fitter_0 = test(0)
+        fitter_1 = test(1)
+        fitter_10 = test(10)
+        self.assertLessEqual(fitter_10.rssq, fitter_1.rssq)
+        self.assertLessEqual(fitter_0.rssq, fitter_1.rssq)
 
     def testMkFitterppMethod(self):
         if IGNORE_TEST:
@@ -179,7 +186,7 @@ class TestFitterpp(unittest.TestCase):
               cn.METHOD_DIFFERENTIAL_EVOLUTION])
         fitter = Fitterpp(self.function, self.params, DATA_DF,
               method_names=methods, is_collect=True)
-        fitter.execute()
+        fitter.fit()
         fitter.plotPerformance(is_plot=IS_PLOT)
 
     def testPlotQuality(self):
@@ -191,17 +198,26 @@ class TestFitterpp(unittest.TestCase):
         fitter = Fitterpp(self.function, self.params, DATA_DF,
               method_names=methods,
               is_collect=True)
-        fitter.execute()
+        fitter.fit()
         fitter.plotQuality(is_plot=IS_PLOT)
 
     def testReport(self):
         if IGNORE_TEST:
             return
-        self.fitter.execute()
+        self.fitter.fit()
         report = self.fitter.report()
         self.assertTrue(cn.METHOD_DIFFERENTIAL_EVOLUTION in report)
         if IS_PLOT:
             print(report)
+
+    def testMakeParameterCube(self):
+        if IGNORE_TEST:
+            return
+        num_sample = 3
+        parameters_lst = self.fitter.makeParameterCube(PARAMS, num_sample)
+        self.assertEqual(len(parameters_lst), num_sample)
+        self.assertTrue(isinstance(parameters_lst[0], lmfit.Parameters))
+     
 
 
 if __name__ == '__main__':

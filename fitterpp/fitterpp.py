@@ -27,8 +27,10 @@ from fitterpp import util
 from fitterpp import constants as cn
 from fitterpp.function_wrapper import FunctionWrapper
 
+import collections
 import copy
 import lmfit
+import lhsmdu
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -95,11 +97,11 @@ class Fitterpp():
     Usage
     -----
     fitter = fitterpp(calcResiduals, params, [cn.METHOD_LEASTSQ])
-    fitter.execute()
+    fitter.fit()
     """
 
     def __init__(self, user_function, initial_params, data_df,
-          method_names=None, max_fev=cn.MAX_NFEV_DFT,
+          method_names=None, max_fev=cn.MAX_NFEV_DFT, num_latincube=0,
           logger=None, is_collect=False):
         """
         Parameters
@@ -116,14 +118,17 @@ class Fitterpp():
             lmfit.parameters
         initial_params: lmfit.Parameters (initial values of parameters)
         data_df: pd.DataFrame
-            Has same structure as the output of the function
+            Observational data (same structure as the output of the function)
         method_names: list-str/FitterppMethod
             Examples of names: "leastsq", "differential_evolution"
         max_fev: int (Maximum number of function evaluations)
+        num_latincube: int (Num samples for latin cube of parameter initial values)
+            A value of 0 means that "value" in each parameter will be used
         """
         self.initial_params = initial_params.copy()
         self.user_function = user_function
         self.data_df = data_df
+        self.num_latincube = num_latincube
         # The values array does not include the key
         self.is_collect = is_collect
         self.fitting_columns = list(data_df.columns)
@@ -183,35 +188,76 @@ class Fitterpp():
             kwargs[key] = value
         return kwargs
 
-    def execute(self):
+    def fit(self):
         """
         Performs parameter fitting function.
         Result is self.final_params
         """
+        FitterResult = collections.namedtuple("FitterResult",
+              ["mzr", "rssq", "prm"])
+        #
         start_time = time.clock()
         last_excp = None
-        self.final_params = self.initial_params.copy()
         minimizer = None
-        for fitter_method in self.methods:
-            method = fitter_method.method
-            kwargs = fitter_method.kwargs
-            wrapper_function = FunctionWrapper(self.function,
-                  is_collect=self.is_collect)
-            minimizer = lmfit.Minimizer(wrapper_function.execute, self.final_params)
-            self.minimizer_result = minimizer.minimize(method=method, **kwargs)
-            # Update the parameters
-            if wrapper_function.bestParamDct is not None:
-                util.updateParameterValues(self.final_params,
-                      wrapper_function.bestParamDct)
-            # Update other statistics
-            self.rssq = wrapper_function.rssq
-            self.performance_stats.append(list(wrapper_function.perfStatistics))
-            self.quality_stats.append(list(wrapper_function.rssqStatistics))
-        if minimizer is None:
+        if self.num_latincube == 0:
+            parameters_lst = [self.initial_params]
+        else:
+            parameters_lst = self.makeParameterCube(self.initial_params,
+                  self.num_latincube)
+        best_result = FitterResult(mzr=None, rssq=1e10, prm=None)
+        for parameters in parameters_lst:
+            result_params = parameters.copy()
+            for fitter_method in self.methods:
+                method = fitter_method.method
+                kwargs = fitter_method.kwargs
+                wrapper_function = FunctionWrapper(self.function,
+                      is_collect=self.is_collect)
+                minimizer = lmfit.Minimizer(wrapper_function.execute, result_params)
+                minimizer_result = minimizer.minimize(method=method, **kwargs)
+                self.performance_stats.append(list(wrapper_function.perfStatistics))
+                self.quality_stats.append(list(wrapper_function.rssqStatistics))
+                # Update the parameters
+                rssq = wrapper_function.rssq
+                if wrapper_function.bestParamDct is not None:
+                    util.updateParameterValues(result_params,
+                          wrapper_function.bestParamDct)
+            if rssq < best_result.rssq:
+                best_result = FitterResult(mzr=minimizer_result, rssq=rssq,
+                      prm=result_params)
+        # Check if successful
+        if best_result.mzr is None:
             msg = "*** Optimization failed."
             self.logger.error(msg, last_excp)
         else:
             self.duration = time.clock() - start_time
+        # Seve the best result
+        self.final_params = best_result.prm
+        self.minimizer_result = best_result.mzr
+        self.rssq = best_result.rssq
+
+    @staticmethod
+    def makeParameterCube(parameters, num_sample):
+        """
+        Creates an lmfit.Parameters based on the number of Latin Cube samples desired.
+
+        Returns
+        -------
+        list-lmfit.Parameters
+        """
+        parameters_lst = []
+        num_parameter = len(parameters.valuesdict())
+        samples = lhsmdu.sample(num_sample, num_parameter).tolist()
+        for sample in samples:
+            new_parameters = lmfit.Parameters()
+            for idx, name in enumerate(parameters.valuesdict().keys()):
+                parameter = parameters.get(name)
+                initial_value = parameter.min  \
+                      + sample[idx]*(parameter.max - parameter.min)
+                new_parameters.add(name=name, min=parameter.min, max=parameter.max,
+                      value=initial_value)
+            parameters_lst.append(new_parameters)
+        return parameters_lst
+
 
     def report(self):
         """
