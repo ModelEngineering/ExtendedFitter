@@ -357,10 +357,16 @@ class Fitterpp():
             CNT: counts,
             AVG: averages,
             })
-        #
+        # Construct the index
         tick_names = [m.method for m in self.methods]
         tick_vals = list(range(len(tick_names)))
-        df.index = tick_names
+        num_entry = len(df)
+        if np.mod(num_entry, len(tick_names)) != 0:
+            raise RuntimeError("Entries should be len(methods)*num_latincube")
+        index_names = []
+        for idx in range(num_entry//len(tick_names)):
+            index_names.extend(["%s--%d" % (n, idx+1) for n in tick_names])
+        df.index = index_names
         _, axes = plt.subplots(1, 3, figsize=(15, 5))
         df.plot.bar(y=TOT, ax=axes[0], title="Total time",
               xlabel="method", fontsize=18)
