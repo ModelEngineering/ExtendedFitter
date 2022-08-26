@@ -17,9 +17,6 @@ The fitting function should operate as follows:
     Returns:
         DataFrame for numpy.array. Index is the row key.
         Arr: 2d array (even if only 1 column)
-
-TODO:
-1. calc function returns np.array
 """
 
 from fitterpp.logs import Logger
