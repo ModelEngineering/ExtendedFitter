@@ -20,3 +20,6 @@ MAX_NFEV_DFT = 1000
 MAX_NFEV = "max_nfev"
 #
 SEC_TO_MS = 1000
+
+# Miscellaneous
+VALUE_SEP = "--"

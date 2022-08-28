@@ -193,7 +193,7 @@ class Fitterpp():
         FitterResult = collections.namedtuple("FitterResult",
               ["mzr", "rssq", "prm"])
         #
-        start_time = time.clock()
+        start_time = time.process_time()
         last_excp = None
         minimizer = None
         if self.num_latincube == 0:
@@ -226,7 +226,7 @@ class Fitterpp():
             msg = "*** Optimization failed."
             self.logger.error(msg, last_excp)
         else:
-            self.duration = time.clock() - start_time
+            self.duration = time.process_time() - start_time
         # Seve the best result
         self.final_params = best_result.prm
         self.minimizer_result = best_result.mzr
@@ -362,7 +362,8 @@ class Fitterpp():
             raise RuntimeError("Entries should be len(methods)*num_latincube")
         index_names = []
         for idx in range(num_entry//len(tick_names)):
-            index_names.extend(["%s--%d" % (n, idx+1) for n in tick_names])
+            index_names.extend(["%s%s%d" % (n, cn.VALUE_SEP, idx+1)
+                  for n in tick_names])
         df.index = index_names
         _, axes = plt.subplots(1, 3, figsize=(15, 5))
         df.plot.bar(y=TOT, ax=axes[0], title="Total time",
