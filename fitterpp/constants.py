@@ -1,5 +1,7 @@
 """Constants for Project."""
 
+import os
+
 # Numerical thresholds
 PARAMETER_LOWER_BOUND = 0
 PARAMETER_UPPER_BOUND =10
@@ -23,3 +25,7 @@ SEC_TO_MS = 1000
 
 # Miscellaneous
 VALUE_SEP = "--"
+
+# File paths
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(PROJECT_DIR, "data")

@@ -32,11 +32,13 @@ ROW_KEY = "row_key"
 INITIAL_VALUE = 1
 MIN_VALUE = -4
 MAX_VALUE = 10
-PARABOLA_PRMS = {"mult": 2, "center": 10}
+MULT_PRM = "mult"
+CENTER_PRM = "center"
+PARABOLA_PRMS = {MULT_PRM: 2, CENTER_PRM: 10}
 SIZE = 20
 XVALUES = range(SIZE)
 DATA_DF = pd.DataFrame({
-      YKEY: np.array([PARABOLA_PRMS["mult"]*(n - PARABOLA_PRMS["center"])**2
+      YKEY: np.array([PARABOLA_PRMS[MULT_PRM]*(n - PARABOLA_PRMS[CENTER_PRM])**2
            + 1*np.random.rand() for n in XVALUES])
       })
 DATA_DF.index = XVALUES
@@ -127,6 +129,22 @@ class TestFitterpp(unittest.TestCase):
         result = self.fitter.user_function(center=1, mult=2, is_dataframe=False)
         self.assertTrue([x == y for x, y in zip(result[:, 0], XVALUES)])
 
+    def testMakeParametersFromLatincubeStrip(self):
+        if IGNORE_TEST:
+            return
+        parameters = self.fitter.makeParametersFromLatincubeStrip(PARAMS, 1)
+        value_dct = {n: [] for n in parameters.valuesdict().keys()}
+        for idx in range(1, 11):
+            parameters = self.fitter.makeParametersFromLatincubeStrip(PARAMS, idx)
+            for name in parameters.valuesdict().keys():
+                value_dct[name].append(parameters.get(name).value)
+        for name in PARAMS.valuesdict().keys():
+            parameter = PARAMS.get(name)
+            true_lows = [v >= parameter.min for v in value_dct[name]]
+            true_highs = [v <= parameter.max for v in value_dct[name]]
+            self.assertTrue(all(true_lows))
+            self.assertTrue(all(true_highs))
+
     def testMkFitterFunction(self):
         if IGNORE_TEST:
             return
@@ -141,7 +159,7 @@ class TestFitterpp(unittest.TestCase):
     def testFit(self):
         if IGNORE_TEST:
             return
-        def test(num_latincube):
+        def test(num_latincube, latincube_idx=None):
             params = lmfit.Parameters()
             for key, value in PARABOLA_PRMS.items():
                 params.add(key, value=0, min=0, max=10*value)
@@ -162,6 +180,21 @@ class TestFitterpp(unittest.TestCase):
         fitter_10 = test(10)
         self.assertLessEqual(fitter_10.rssq, fitter_1.rssq)
         self.assertLessEqual(fitter_0.rssq, fitter_1.rssq)
+        #
+        RSSQ = "rssq"
+        names = [MULT_PRM, CENTER_PRM, RSSQ]
+        value_dct = {n: [] for n in names}
+        for idx in range(1, 11):
+            new_fitter = test(None, latincube_idx=idx)
+            for name in names:
+                if name == RSSQ:
+                    value_dct[name].append(new_fitter.rssq)
+                else:
+                    value_dct[name].append(new_fitter.final_params.get(name).value)
+        min_rssq = min(value_dct[RSSQ])
+        min_idx = value_dct[RSSQ].index(min_rssq)
+        minvalue_dct = {n: v[min_idx] for n, v in value_dct.items()}
+        self.assertLessEqual(minvalue_dct[RSSQ], fitter_1.rssq)
 
     def testMkFitterppMethod(self):
         if IGNORE_TEST:

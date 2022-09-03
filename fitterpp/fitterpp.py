@@ -20,6 +20,7 @@ The fitting function should operate as follows:
 """
 
 from fitterpp.logs import Logger
+import fitterpp.latin_cube as lc
 from fitterpp import util
 from fitterpp import constants as cn
 from fitterpp.function_wrapper import FunctionWrapper
@@ -35,6 +36,7 @@ import time
 
 
 ITERATION = "iteration"
+LATINCUBE_DF = lc.read()
 
 
 class DFIntersectionFinder:
@@ -91,6 +93,8 @@ class Fitterpp():
     The class also handles an oddity with lmfit that the final parameters
     returned may not be the best.
 
+    If latincube_idx is not None, then use a precomputed latin cube position.
+
     Usage
     -----
     fitter = fitterpp(calcResiduals, params, [cn.METHOD_LEASTSQ])
@@ -98,8 +102,8 @@ class Fitterpp():
     """
 
     def __init__(self, user_function, initial_params, data_df,
-          method_names=None, max_fev=cn.MAX_NFEV_DFT, num_latincube=0,
-          logger=None, is_collect=False):
+          method_names=None, max_fev=cn.MAX_NFEV_DFT, num_latincube=None,
+          latincube_idx=None, logger=None, is_collect=False):
         """
         Parameters
         ----------
@@ -121,11 +125,15 @@ class Fitterpp():
         max_fev: int (Maximum number of function evaluations)
         num_latincube: int (Num samples for latin cube of parameter initial values)
             A value of 0 means that "value" in each parameter will be used
+        latincube_idx: position to use in pre-computed latin_cube
         """
         self.initial_params = initial_params.copy()
         self.user_function = user_function
         self.data_df = data_df
         self.num_latincube = num_latincube
+        if self.num_latincube is None:
+            self.num_latincube = 0
+        self.latincube_idx = latincube_idx
         # The values array does not include the key
         self.is_collect = is_collect
         self.fitting_columns = list(data_df.columns)
@@ -196,11 +204,16 @@ class Fitterpp():
         start_time = time.process_time()
         last_excp = None
         minimizer = None
-        if self.num_latincube == 0:
-            parameters_lst = [self.initial_params]
+        # Construct the list of parameters to fit
+        if self.latincube_idx is None:
+            if self.num_latincube == 0:
+                parameters_lst = [self.initial_params]
+            else:
+                parameters_lst = self.makeParameterCube(self.initial_params,
+                      self.num_latincube)
         else:
-            parameters_lst = self.makeParameterCube(self.initial_params,
-                  self.num_latincube)
+            parameters_lst = [makeParametersFromLatincubeStrip(
+                  self.initial_params, self.latincube_idx)]
         best_result = FitterResult(mzr=None, rssq=1e10, prm=None)
         for parameters in parameters_lst:
             result_params = parameters.copy()
@@ -237,6 +250,11 @@ class Fitterpp():
         """
         Creates an lmfit.Parameters based on the number of Latin Cube samples desired.
 
+        Parameters
+        ----------
+        parameters: lmfit.Parameters
+        num_sample: int (number of values of each parameter)
+
         Returns
         -------
         list-lmfit.Parameters
@@ -255,6 +273,31 @@ class Fitterpp():
             parameters_lst.append(new_parameters)
         return parameters_lst
 
+    @staticmethod
+    def makeParametersFromLatincubeStrip(parameters, sample_idx):
+        """
+        Creates an lmfit.Parameters based on the index of the Latin Cube sample.
+
+        Parameters
+        ----------
+        parameters: lmfit.Parameters
+        sample_idx: int (1-based index into latin cube table)
+
+        Returns
+        -------
+        lmfit.Parameters
+        """
+        indices = list(LATINCUBE_DF.loc[sample_idx, :].values)
+        num_parameter = len(parameters.valuesdict())
+        indices = indices[0:num_parameter]
+        new_parameters = lmfit.Parameters()
+        for idx, name in enumerate(parameters.valuesdict().keys()):
+            parameter = parameters.get(name)
+            initial_value = parameter.min  \
+                  + indices[idx]*(parameter.max - parameter.min)
+            new_parameters.add(name=name, min=parameter.min, max=parameter.max,
+                  value=initial_value)
+        return new_parameters
 
     def report(self):
         """
