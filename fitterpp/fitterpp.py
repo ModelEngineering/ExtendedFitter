@@ -212,7 +212,7 @@ class Fitterpp():
                 parameters_lst = self.makeParameterCube(self.initial_params,
                       self.num_latincube)
         else:
-            parameters_lst = [makeParametersFromLatincubeStrip(
+            parameters_lst = [self.makeParametersFromLatincubeStrip(
                   self.initial_params, self.latincube_idx)]
         best_result = FitterResult(mzr=None, rssq=1e10, prm=None)
         for parameters in parameters_lst:

@@ -19,6 +19,7 @@ For more details, see
 * 0.0.3 
   * dictToParameter can set initial value to random in [min, max]
   * method_names can be strings or a FitterppMethod
+  * latin cube index to compute across a latin cube
 * 0.0.2 7/22/2022.
     User function must be self-describing, optionally returning a dataframe
 * 0.0.1 7/19/2022. First release.
