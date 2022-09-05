@@ -1,5 +1,6 @@
 coverage
 jupyterlab
+lhsmdu
 lmfit
 matplotlib
 nose2
