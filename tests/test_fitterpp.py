@@ -179,7 +179,7 @@ class TestFitterpp(unittest.TestCase):
         fitter_1 = test(1)
         fitter_10 = test(10)
         self.assertLessEqual(fitter_10.rssq, fitter_1.rssq)
-        self.assertLessEqual(fitter_0.rssq, fitter_1.rssq)
+        self.assertLessEqual(fitter_10.rssq, fitter_0.rssq)
         #
         RSSQ = "rssq"
         names = [MULT_PRM, CENTER_PRM, RSSQ]
