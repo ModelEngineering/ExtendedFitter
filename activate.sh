@@ -1,4 +1,3 @@
-deactivate
+#!/bin/bash
+source setup_run.sh
 source fpp/bin/activate
-PYTHONPATH=`pwd`
-export PYTHONPATH
