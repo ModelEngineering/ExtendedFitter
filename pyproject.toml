@@ -1,0 +1,28 @@
+[project]
+name = "fitterpp"
+version = "0.0.4"
+description = "Fitter parameters for an SBML model"
+authors = [{ name = "Joseph Hellerstein", email = "joseph.hellerstein@gmail.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.6"
+
+dependencies = [
+    "jupyterlab",
+    "lhsmdu",
+    "lmfit",
+    "matplotlib",
+    "nose2",
+    "numpy",
+    "pandas",
+]
+
+[project.urls]
+Homepage = "https://github.com/ModelEngineering/fitterpp"
+
+[options]
+zip_safe = "False"
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
