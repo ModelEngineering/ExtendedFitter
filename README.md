@@ -16,6 +16,8 @@ For more details, see
 ).
 
 # Version History
+* 0.0.6
+  * Fix pyproject.toml
 * 0.0.4
   * Migrated setup to pyproject.toml 
 * 0.0.3 

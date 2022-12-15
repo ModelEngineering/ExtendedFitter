@@ -3,7 +3,7 @@ jupyterlab
 lhsmdu
 lmfit
 matplotlib
-nose2
+nose
 numpy
 pandas
 pylint

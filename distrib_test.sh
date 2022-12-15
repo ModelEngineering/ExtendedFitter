@@ -1,7 +1,10 @@
 #!/bin/bash
 # Setup the virtual environment to test a PyPI distribution
-cd $HOME
-DIR=testing_fitterpp
+# $1 - repo directory
+REPOPATH=~/home/Technical/repos
+pushd ${REPOPATH}
+REPODIR=$1
+DIR=${REPOPATH}/testing_${REPODIR}
 if [ -d $DIR ] 
 then
     rm -rf $DIR
@@ -12,5 +15,5 @@ source ${DIR}/bin/activate
 pip install --upgrade pip
 pip install fitterpp
 echo "Testing the install"
-cd ~/fitterpp
-nose2 tests
+cd ${REPODIR}
+nosetests tests
