@@ -16,6 +16,8 @@ For more details, see
 ).
 
 # Version History
+* 0.0.8
+    * Automatic calculation of the version from pyproject.toml
 * 0.0.7
   * Fix pyproject.toml
 * 0.0.6
